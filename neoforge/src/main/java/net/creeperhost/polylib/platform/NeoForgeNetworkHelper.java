@@ -1,6 +1,14 @@
 package net.creeperhost.polylib.platform;
 
 import io.netty.buffer.Unpooled;
+import net.creeperhost.polylib.accessibility.AccessibilityPrefsC2SPayload;
+import net.creeperhost.polylib.accessibility.AccessibilityPrefsManager;
+import net.creeperhost.polylib.player.serverdata.PlayerServerDataClientCache;
+import net.creeperhost.polylib.player.serverdata.SyncPlayerServerDataS2CPayload;
+import net.creeperhost.polylib.player.settings.PlayerClientSettingsClientCache;
+import net.creeperhost.polylib.player.settings.PlayerClientSettingsManager;
+import net.creeperhost.polylib.player.settings.PlayerClientSettingSyncS2CPayload;
+import net.creeperhost.polylib.player.settings.UpdatePlayerClientSettingC2SPayload;
 import net.creeperhost.polylib.Constants;
 import net.creeperhost.polylib.network.PolyLibNetwork;
 import net.creeperhost.polylib.network.packets.*;
@@ -54,6 +62,27 @@ public class NeoForgeNetworkHelper implements INetworkHelper
             RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.wrappedBuffer(payload.data()), player.registryAccess());
             ctx.enqueueWork(() -> PolyLibNetwork.handleTileDataValueFromServer(player, buf));
         });
+
+        registrar.playToServer(AccessibilityPrefsC2SPayload.TYPE, AccessibilityPrefsC2SPayload.CODEC, (payload, ctx) ->
+                ctx.enqueueWork(() -> AccessibilityPrefsManager.applyFromClient(
+                        ctx.player().getUUID(), payload.values())));
+
+        registrar.playToServer(UpdatePlayerClientSettingC2SPayload.TYPE,
+                UpdatePlayerClientSettingC2SPayload.CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() -> {
+                    if (ctx.player() instanceof ServerPlayer sp)
+                        PlayerClientSettingsManager.applyFromClient(sp, payload.typeId(), payload.data());
+                }));
+
+        registrar.playToClient(PlayerClientSettingSyncS2CPayload.TYPE,
+                PlayerClientSettingSyncS2CPayload.CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() ->
+                        PlayerClientSettingsClientCache.receive(payload.playerUUID(), payload.typeId(), payload.data())));
+
+        registrar.playToClient(SyncPlayerServerDataS2CPayload.TYPE,
+                SyncPlayerServerDataS2CPayload.CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() ->
+                        PlayerServerDataClientCache.receive(payload.typeId(), payload.data())));
     }
 
     @Override

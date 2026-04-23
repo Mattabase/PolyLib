@@ -9,6 +9,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.creeperhost.polylib.neoforge.registry.NeoPolyRegistry;
 
 @Mod(Constants.MOD_ID)
 public class PolyLibNeoForge
@@ -33,6 +34,7 @@ public class PolyLibNeoForge
         }
 
         COMPONENTS.register(eventBus);
+        NeoPolyRegistry.registerToBus(eventBus);
 
         if (PolylibCommon.testMod)
         {

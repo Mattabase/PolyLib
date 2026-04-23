@@ -2,6 +2,9 @@ package net.creeperhost.polylib.config;
 
 import blue.endless.jankson.Comment;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Created by brandon3055 on 12/09/2024
  */
@@ -9,5 +12,15 @@ public class PolyConfig extends ConfigData {
 
     @Comment ("Allows poly lib to run as a server side only support. Without this, non-vanilla clients without polylib may not be able to connect.")
     public boolean serverOnlySupport = true;
+
+    @Comment("When true, ALL registered accessibility preferences are treated as PLAYER_OVERRIDES_SERVER " +
+             "regardless of how they were individually registered. " +
+             "Enables full player-sovereign accessibility on dedicated accessibility-focused servers/modpacks.")
+    public boolean radicalAccessibility = false;
+
+    @Comment("Controls which mod config panel keybinds are active. " +
+             "Entries are added automatically the first time a mod registers a config panel with a keyboard shortcut. " +
+             "Set a value to false to prevent that keybind from appearing in the Controls screen.")
+    public Map<String, Boolean> configPanelKeybinds = new LinkedHashMap<>();
 
 }
