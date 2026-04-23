@@ -2,6 +2,7 @@ package net.creeperhost.polylib.player.settings;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
@@ -19,18 +20,22 @@ public final class PlayerClientSettingsType<T>
     private final Supplier<T> defaultFactory;
     private final BroadcastScope scope;
     private final boolean copyOnDeath;
+    /** Optional translation key for this type's human-readable display name. */
+    @Nullable private final String displayNameKey;
 
     PlayerClientSettingsType(String id,
                              StreamCodec<RegistryFriendlyByteBuf, T> codec,
                              Supplier<T> defaultFactory,
                              BroadcastScope scope,
-                             boolean copyOnDeath)
+                             boolean copyOnDeath,
+                             @Nullable String displayNameKey)
     {
         this.id = id;
         this.codec = codec;
         this.defaultFactory = defaultFactory;
         this.scope = scope;
         this.copyOnDeath = copyOnDeath;
+        this.displayNameKey = displayNameKey;
     }
 
     public String id()
@@ -58,9 +63,21 @@ public final class PlayerClientSettingsType<T>
         return copyOnDeath;
     }
 
+    /**
+     * Optional translation key for this type's human-readable display name.
+     * Null if no display name was registered.
+     * Used by UI panels that list available settings types.
+     */
+    @Nullable
+    public String displayNameKey()
+    {
+        return displayNameKey;
+    }
+
     @Override
     public String toString()
     {
         return "PlayerClientSettingsType[" + id + "]";
     }
 }
+

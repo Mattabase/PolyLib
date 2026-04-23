@@ -28,10 +28,7 @@ public final class AccessibilityOptionsRegistry
 
     private record Entry(String key, AccessibilityPolicy policy, OptionsWidgetProvider provider) {}
 
-    // Insertion-ordered so widgets appear in registration order
     private static final List<Entry> ENTRIES = new ArrayList<>();
-
-    // ── Registration ──────────────────────────────────────────────────────────
 
     /**
      * Registers a widget provider with the default policy ({@link AccessibilityPolicy#PLAYER_OVERRIDES_SERVER}).
@@ -56,7 +53,33 @@ public final class AccessibilityOptionsRegistry
         ENTRIES.add(new Entry(key, policy, provider));
     }
 
-    // ── Injection ─────────────────────────────────────────────────────────────
+    /**
+     * Builder-style overload — registers toggles/pairs/categories via a fluent
+     * {@link AccessibilityRegistrationBuilder} and simultaneously captures default English
+     * strings for lang datagen.
+     *
+     * @param key     Unique namespaced key, e.g. {@code "mymod.rescue"}
+     * @param builder Consumer that configures the {@link AccessibilityRegistrationBuilder}
+     */
+    public static void register(String key, java.util.function.Consumer<AccessibilityRegistrationBuilder> builder)
+    {
+        register(key, AccessibilityPolicy.PLAYER_OVERRIDES_SERVER, builder);
+    }
+
+    /**
+     * Builder-style registration with an explicit policy.
+     *
+     * @param key     Unique namespaced key
+     * @param policy  Whether the player's value overrides server config
+     * @param builder Consumer that configures the {@link AccessibilityRegistrationBuilder}
+     */
+    public static void register(String key, AccessibilityPolicy policy,
+                                java.util.function.Consumer<AccessibilityRegistrationBuilder> builder)
+    {
+        AccessibilityRegistrationBuilder b = new AccessibilityRegistrationBuilder();
+        builder.accept(b);
+        ENTRIES.add(new Entry(key, policy, b));
+    }
 
     /**
      * Called from the loader's screen init event. Injects all registered widgets when the
@@ -74,8 +97,6 @@ public final class AccessibilityOptionsRegistry
             entry.provider().addOptions(target);
         }
     }
-
-    // ── Policy query ──────────────────────────────────────────────────────────
 
     /**
      * Returns the effective policy for the given key, taking into account

@@ -32,8 +32,6 @@ import java.util.UUID;
  */
 public class NeoForgePlayerDataHelper implements IPlayerDataHelper
 {
-    // ── Client settings ────────────────────────────────────────────────────────
-
     private final Map<String, PlayerClientSettingsType<?>> registeredTypes = new LinkedHashMap<>();
     private static final String SETTINGS_PREFIX = "polylib_settings.";
 
@@ -99,8 +97,6 @@ public class NeoForgePlayerDataHelper implements IPlayerDataHelper
         buf.release();
         return data;
     }
-
-    // ── Server data ────────────────────────────────────────────────────────────
 
     private final Map<String, PlayerServerDataType<?>> registeredServerTypes = new LinkedHashMap<>();
     private static final String SDATA_PREFIX = "polylib_sdata.";

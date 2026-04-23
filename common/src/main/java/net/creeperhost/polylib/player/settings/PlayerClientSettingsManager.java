@@ -20,8 +20,6 @@ public final class PlayerClientSettingsManager
 
     private PlayerClientSettingsManager() {}
 
-    // ─── Server lifecycle ──────────────────────────────────────────────────────
-
     /** Called when a player joins. Loads persisted data and syncs to appropriate clients. */
     public static void onPlayerLogin(ServerPlayer player)
     {
@@ -38,15 +36,10 @@ public final class PlayerClientSettingsManager
         }
     }
 
-    /** Called when a player leaves. Persists and cleans up. */
+    /** Called when a player leaves. Store is discarded — persistence happens on each {@link #set} call. */
     public static void onPlayerLogout(UUID playerUUID)
     {
-        PlayerClientSettingsStore store = STORES.remove(playerUUID);
-        if (store != null)
-        {
-            // We can't persist without a ServerPlayer here; persistence is done on set() for dirty entries.
-            // The store is simply discarded.
-        }
+        STORES.remove(playerUUID);
     }
 
     /** Called on respawn. Copies settings from old UUID to new player if copyOnDeath is true. */
@@ -89,12 +82,7 @@ public final class PlayerClientSettingsManager
         }
     }
 
-    // ─── C2S handling ─────────────────────────────────────────────────────────
-
-    /**
-     * Called when server receives {@link UpdatePlayerClientSettingC2SPayload}.
-     * Deserializes the new value, updates the store, persists, and re-broadcasts.
-     */
+    /** Called when server receives {@link UpdatePlayerClientSettingC2SPayload}. */
     public static void applyFromClient(ServerPlayer player, String typeId, byte[] data)
     {
         PlayerClientSettingsRegistry.byId(typeId).ifPresent(type -> {
@@ -105,11 +93,7 @@ public final class PlayerClientSettingsManager
         });
     }
 
-    // ─── Client API ───────────────────────────────────────────────────────────
-
-    /**
-     * Get the current value for a player. Server-side only.
-     */
+    /** Returns the current value for a player. Server-side only. */
     public static <T> T get(UUID playerUUID, PlayerClientSettingsType<T> type)
     {
         PlayerClientSettingsStore store = STORES.get(playerUUID);
@@ -117,9 +101,7 @@ public final class PlayerClientSettingsManager
         return store.get(type);
     }
 
-    /**
-     * Set a value server-side (e.g. command-driven). Persists and broadcasts.
-     */
+    /** Sets a value server-side. Persists and broadcasts per {@link BroadcastScope}. */
     public static <T> void set(ServerPlayer player, PlayerClientSettingsType<T> type, T value)
     {
         UUID uuid = player.getUUID();
@@ -131,10 +113,8 @@ public final class PlayerClientSettingsManager
     }
 
     /**
-     * Send the current value of a type to the server. Client-side.
-     * Caller must provide the client's {@link RegistryAccess}
-     * (e.g. {@code Minecraft.getInstance().getConnection().registryAccess()}).
-     * Serializes and dispatches via {@link Services#NETWORK}.
+     * Sends the current value to the server. Client-side.
+     * Pass {@code Minecraft.getInstance().getConnection().registryAccess()} as the registry access.
      */
     public static <T> void sendToServer(PlayerClientSettingsType<T> type, T value, RegistryAccess registryAccess)
     {
@@ -147,8 +127,6 @@ public final class PlayerClientSettingsManager
         buf.release();
         Services.NETWORK.sendToServer(new UpdatePlayerClientSettingC2SPayload(type.id(), data));
     }
-
-    // ─── Internal ─────────────────────────────────────────────────────────────
 
     @SuppressWarnings("unchecked")
     private static <T> void applyTyped(PlayerClientSettingsType<T> type,
@@ -193,10 +171,7 @@ public final class PlayerClientSettingsManager
                         sendToPlayer(p, uuid, type, store));
                 break;
             case TRACKING_RANGE:
-                // Backfill on login from ALL_ONLINE perspective is not needed — StartTracking handles it
-                // But we should still send to self on login
                 if (isLogin) sendToPlayer(owner, uuid, type, store);
-                // When value changes (not login), send to current trackers
                 if (!isLogin)
                 {
                     ((net.minecraft.server.level.ServerLevel) owner.level()).getServer().getPlayerList().getPlayers().forEach(p -> {

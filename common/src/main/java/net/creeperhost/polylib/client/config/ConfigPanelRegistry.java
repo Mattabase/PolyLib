@@ -52,8 +52,6 @@ public final class ConfigPanelRegistry
 {
     private ConfigPanelRegistry() {}
 
-    // ── Entry types ───────────────────────────────────────────────────────────
-
     public sealed interface ConfigPanelEntry permits VanillaEntry, ModularEntry
     {
         String modId();
@@ -87,11 +85,7 @@ public final class ConfigPanelRegistry
         }
     }
 
-    // ── Storage ───────────────────────────────────────────────────────────────
-
     private static final LinkedHashMap<String, ConfigPanelEntry> ENTRIES = new LinkedHashMap<>();
-
-    // ── Tier 1: vanilla Screen ────────────────────────────────────────────────
 
     public static void register(String modId, ScreenFactory factory)
     {
@@ -110,7 +104,23 @@ public final class ConfigPanelRegistry
         ENTRIES.put(modId, new VanillaEntry(modId, label, factory, km));
     }
 
-    // ── Tier 2: ModularGui ────────────────────────────────────────────────────
+    /**
+     * Register with a translation key and default English label.
+     * Contributes {@code labelKey → defaultEnglish} to {@link net.creeperhost.polylib.data.lang.PolyLangContributions} for lang datagen.
+     *
+     * @param modId          Mod ID
+     * @param labelKey       Translation key for the config button label
+     * @param defaultEnglish Default English text shown on the button
+     * @param factory        Screen factory
+     * @param shortcut       Optional keybind shortcut (may be null)
+     */
+    public static void register(String modId, String labelKey, String defaultEnglish,
+                                ScreenFactory factory, @Nullable KeyboardShortcut shortcut)
+    {
+        net.creeperhost.polylib.data.lang.PolyLangContributions.contribute(labelKey, defaultEnglish);
+        register(modId, Component.translatable(labelKey), factory, shortcut);
+    }
+
 
     public static void registerModularGui(String modId, GuiProviderFactory factory)
     {
@@ -129,7 +139,22 @@ public final class ConfigPanelRegistry
         ENTRIES.put(modId, new ModularEntry(modId, label, factory, km));
     }
 
-    // ── Tier 3: ModularGui injection overlay ──────────────────────────────────
+    /**
+     * Register a ModularGui screen with a translation key and default English label.
+     * Contributes {@code labelKey → defaultEnglish} to {@link net.creeperhost.polylib.data.lang.PolyLangContributions} for lang datagen.
+     *
+     * @param modId          Mod ID
+     * @param labelKey       Translation key for the config button label
+     * @param defaultEnglish Default English text shown on the button
+     * @param factory        ModularGui provider factory
+     * @param shortcut       Optional keybind shortcut (may be null)
+     */
+    public static void registerModularGui(String modId, String labelKey, String defaultEnglish,
+                                          GuiProviderFactory factory, @Nullable KeyboardShortcut shortcut)
+    {
+        net.creeperhost.polylib.data.lang.PolyLangContributions.contribute(labelKey, defaultEnglish);
+        registerModularGui(modId, Component.translatable(labelKey), factory, shortcut);
+    }
 
     /**
      * Registers a ModularGui overlay that is injected directly into a matching vanilla screen
@@ -143,7 +168,6 @@ public final class ConfigPanelRegistry
         ModularGuiInjector.registerInjection(screenPredicate, s -> guiFunction.apply(s));
     }
 
-    // ── Queries ───────────────────────────────────────────────────────────────
 
     public static Map<String, ConfigPanelEntry> getAll()
     {
@@ -156,49 +180,8 @@ public final class ConfigPanelRegistry
         return ENTRIES.get(modId);
     }
 
-    // ── Button injection (called from NeoForge/Fabric screen init events) ─────
-
     /**
-     * Called from screen init events. Injects a config button for registered mods into the
-     * given screen if applicable. The {@code addListener} consumer adds the button to the screen.
-     *
-     * <p>Loaders pass their own mechanism for adding widgets: NeoForge uses
-     * {@code ScreenEvent.Init.Post#addListener}, Fabric uses {@code ScreenEvents} API.</p>
-     *
-     * @param screen      The screen that just initialised
-     * @param addListener Consumer that adds an {@link net.minecraft.client.gui.components.AbstractWidget} to the screen
-     */
-    public static void injectConfigButton(Screen screen,
-                                          Consumer<net.minecraft.client.gui.components.AbstractWidget> addListener)
-    {
-        // Only inject into NeoForge ConfigurationScreen / ConfigurationSectionScreen.
-        // Both classes are in the neoforge module — we do a class-name check to avoid
-        // a hard compile-time dependency from common on neoforge classes.
-        String screenClass = screen.getClass().getName();
-        if (!screenClass.contains("ConfigurationScreen")) return;
-
-        int btnW = 150, btnH = 20;
-        int startY = screen.height - btnH - 6;
-        int slot = 0;
-
-        for (ConfigPanelEntry entry : ENTRIES.values())
-        {
-            int y = startY - (slot * (btnH + 2));
-            final ConfigPanelEntry captured = entry;
-            net.minecraft.client.gui.components.Button btn =
-                    net.minecraft.client.gui.components.Button.builder(
-                                    entry.label(),
-                                    b -> Minecraft.getInstance().setScreen(captured.createScreen(screen)))
-                            .pos(6, y).size(btnW, btnH).build();
-            addListener.accept(btn);
-            slot++;
-        }
-    }
-
-    // ── Keybind tick (called from client tick events) ─────────────────────────
-
-    /**
-     * Checks all registered keybinds. Opens the config screen when a keybind is consumed.
+     * Checks all registered keybinds and opens the config screen when one is consumed.
      * Only fires when no other screen is open.
      */
     public static void tickKeybinds()
@@ -218,11 +201,8 @@ public final class ConfigPanelRegistry
         }
     }
 
-    // ── Keybind lookup ────────────────────────────────────────────────────────
-
     /**
-     * Returns all registered {@link KeyMapping}s so they can be passed to
-     * {@code RegisterKeyMappingsEvent} / Fabric's key registry.
+     * Returns all registered {@link KeyMapping}s for loader key-registration events.
      */
     public static List<KeyMapping> getAllKeyMappings()
     {
@@ -234,12 +214,7 @@ public final class ConfigPanelRegistry
         return list;
     }
 
-    // ── Internal helpers ──────────────────────────────────────────────────────
 
-    /**
-     * Default label: tries {@code "<modId>.polylib.config_button"} as a translatable key;
-     * falls back gracefully if the key is absent (MC just shows the key string).
-     */
     private static Component defaultLabel(String modId)
     {
         return Component.translatable(modId + ".polylib.config_button");

@@ -15,12 +15,7 @@ import java.util.UUID;
  */
 public interface IPlayerDataHelper
 {
-    // ── Client settings (client is authority, broadcast S2C) ──────────────────
-
-    /**
-     * Called when a {@link PlayerClientSettingsType} is registered.
-     * Allocates the platform storage slot (e.g. registers an AttachmentType on Fabric).
-     */
+    /** Called when a {@link PlayerClientSettingsType} is registered. Allocates the platform storage slot. */
     void registerType(PlayerClientSettingsType<?> type);
 
     /**
@@ -35,12 +30,7 @@ public interface IPlayerDataHelper
      */
     void saveAll(UUID playerUUID, ServerPlayer player, PlayerClientSettingsStore store);
 
-    // ── Server data (server is authority, optional S2C sync to owner) ─────────
-
-    /**
-     * Called when a {@link PlayerServerDataType} is registered.
-     * Allocates the platform storage slot (e.g. registers an AttachmentType on Fabric).
-     */
+    /** Called when a {@link PlayerServerDataType} is registered. Allocates the platform storage slot. */
     void registerServerDataType(PlayerServerDataType<?> type);
 
     /**

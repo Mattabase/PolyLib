@@ -34,8 +34,6 @@ public final class NeoForgeConfigHelper
 {
     private NeoForgeConfigHelper() {}
 
-    // ── Vanilla Screen ────────────────────────────────────────────────────────
-
     public static void register(ModContainer container, ScreenFactory factory)
     {
         register(container, factory, null);
@@ -47,8 +45,6 @@ public final class NeoForgeConfigHelper
         container.registerExtensionPoint(IConfigScreenFactory.class,
                 (mc, parent) -> factory.create(parent));
     }
-
-    // ── ModularGui ────────────────────────────────────────────────────────────
 
     public static void registerModularGui(ModContainer container, GuiProviderFactory factory)
     {

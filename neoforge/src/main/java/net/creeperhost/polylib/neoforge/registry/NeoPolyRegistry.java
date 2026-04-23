@@ -18,6 +18,7 @@ public class NeoPolyRegistry<T> extends PolyRegistry<T> {
     private final DeferredRegister<T> deferredRegister;
 
     public NeoPolyRegistry(ResourceKey<? extends Registry<T>> registryKey, String modId) {
+        super(registryKey, modId);
         this.deferredRegister = DeferredRegister.create(registryKey, modId);
         ALL_REGISTRIES.add(this);
     }

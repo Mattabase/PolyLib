@@ -14,12 +14,11 @@ import java.util.function.Supplier;
 public class FabricPolyRegistry<T> extends PolyRegistry<T> {
     
     private final ResourceKey<? extends Registry<T>> registryKey;
-    private final String modId;
     private final Map<String, Supplier<? extends T>> entries = new LinkedHashMap<>();
 
     public FabricPolyRegistry(ResourceKey<? extends Registry<T>> registryKey, String modId) {
+        super(registryKey, modId);
         this.registryKey = registryKey;
-        this.modId = modId;
     }
 
     @Override

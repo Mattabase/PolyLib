@@ -13,9 +13,7 @@ public class PolyConfig extends ConfigData {
     @Comment ("Allows poly lib to run as a server side only support. Without this, non-vanilla clients without polylib may not be able to connect.")
     public boolean serverOnlySupport = true;
 
-    @Comment("When true, ALL registered accessibility preferences are treated as PLAYER_OVERRIDES_SERVER " +
-             "regardless of how they were individually registered. " +
-             "Enables full player-sovereign accessibility on dedicated accessibility-focused servers/modpacks.")
+    @Comment("When true, all registered accessibility preferences treat the player's value as authoritative, ignoring server policy.")
     public boolean radicalAccessibility = false;
 
     @Comment("Controls which mod config panel keybinds are active. " +

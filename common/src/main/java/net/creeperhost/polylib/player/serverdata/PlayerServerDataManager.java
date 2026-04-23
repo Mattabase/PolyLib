@@ -25,11 +25,7 @@ public final class PlayerServerDataManager
 
     private PlayerServerDataManager() {}
 
-    // ─── Server lifecycle ──────────────────────────────────────────────────────
-
-    /**
-     * Called when a player joins. Loads persisted data and syncs syncable types to owner.
-     */
+    /** Called when a player joins. Loads persisted data and syncs syncable types to the owner. */
     public static void onPlayerLogin(ServerPlayer player)
     {
         UUID uuid = player.getUUID();
@@ -81,11 +77,9 @@ public final class PlayerServerDataManager
         }
     }
 
-    // ─── Read / Write ──────────────────────────────────────────────────────────
-
     /**
-     * Get the current value for a player. <b>Server-side only.</b>
-     * Returns the type's default if the player has no store (e.g. before login).
+     * Returns the current value for a player. Server-side only.
+     * Returns the type's default if the player has no active store.
      */
     public static <T> T get(ServerPlayer player, PlayerServerDataType<T> type)
     {
@@ -107,8 +101,6 @@ public final class PlayerServerDataManager
         if (type.syncsToClient())
             syncToOwner(player, type, store);
     }
-
-    // ─── Internal ─────────────────────────────────────────────────────────────
 
     private static <T> void syncToOwner(ServerPlayer owner,
                                          PlayerServerDataType<T> type,

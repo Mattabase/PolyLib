@@ -121,13 +121,6 @@ public class FabricPlayerDataHelper implements IPlayerDataHelper
         return data;
     }
 
-    // ── Server data ────────────────────────────────────────────────────────────
-
-    /**
-     * Each {@link PlayerServerDataType} gets its own {@link AttachmentType AttachmentType&lt;T&gt;}
-     * registered with the Fabric AttachmentRegistry, using the type's DFU {@code nbtCodec} directly.
-     * The {@code copyOnDeath()} flag is forwarded so Fabric handles death-copy automatically.
-     */
     private final Map<String, AttachmentType<?>> serverDataAttachments = new LinkedHashMap<>();
 
     @Override

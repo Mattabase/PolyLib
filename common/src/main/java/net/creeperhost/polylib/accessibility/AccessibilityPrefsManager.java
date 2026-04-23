@@ -16,8 +16,6 @@ public final class AccessibilityPrefsManager
 
     private static final ConcurrentHashMap<UUID, Map<String, Boolean>> STORE = new ConcurrentHashMap<>();
 
-    // ── Write ─────────────────────────────────────────────────────────────────
-
     /**
      * Applies a batch of preference values from a client packet.
      * Overwrites only the provided keys; other keys are left unchanged.
@@ -37,8 +35,6 @@ public final class AccessibilityPrefsManager
     {
         STORE.computeIfAbsent(playerUUID, id -> new ConcurrentHashMap<>()).put(key, value);
     }
-
-    // ── Read ──────────────────────────────────────────────────────────────────
 
     /**
      * Returns the player's current value for the given key, or {@code defaultValue} if
@@ -62,7 +58,6 @@ public final class AccessibilityPrefsManager
         return Optional.ofNullable(v);
     }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     /**
      * Removes all stored preferences for the given player.

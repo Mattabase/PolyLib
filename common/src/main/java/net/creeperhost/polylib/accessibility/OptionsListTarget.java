@@ -21,11 +21,8 @@ import java.util.function.Consumer;
  */
 public final class OptionsListTarget
 {
-    // Reflection cache for OptionsList field (on OptionsSubScreen)
     private static Field optionsListField = null;
     private static boolean fieldReflectionAttempted = false;
-
-    // Reflection cache for NeoForge-patched addSmall / addBig taking AbstractWidget
     private static Method addSmallMethod = null;
     private static Method addBigMethod = null;
     private static boolean methodReflectionAttempted = false;
@@ -38,7 +35,6 @@ public final class OptionsListTarget
         ensureMethodsReflected();
     }
 
-    // ── Raw slot access ───────────────────────────────────────────────────────
 
     /** Adds two small (half-width) widgets side by side. Right may be null for a single entry. */
     public void addSmall(AbstractWidget left, @Nullable AbstractWidget right)
@@ -72,12 +68,7 @@ public final class OptionsListTarget
         }
     }
 
-    // ── High-level builders ───────────────────────────────────────────────────
-
-    /**
-     * Adds a toggle (On/Off) button. The current value is read from {@code getter};
-     * changes are pushed to {@code setter}.
-     */
+    /** Adds a toggle (On/Off) button. */
     public CycleButton<Boolean> addToggle(Component label, BooleanSupplier getter, Consumer<Boolean> setter)
     {
         CycleButton<Boolean> btn = CycleButton.onOffBuilder(getter.getAsBoolean())
@@ -86,9 +77,6 @@ public final class OptionsListTarget
         return btn;
     }
 
-    /**
-     * Adds two toggle buttons side by side.
-     */
     public void addTogglePair(Component leftLabel, BooleanSupplier leftGetter, Consumer<Boolean> leftSetter,
                               Component rightLabel, BooleanSupplier rightGetter, Consumer<Boolean> rightSetter)
     {
@@ -99,9 +87,6 @@ public final class OptionsListTarget
         addSmall(left, right);
     }
 
-    /**
-     * Adds a full-width section category header (plain text, not interactive).
-     */
     public void addCategory(Component title)
     {
         net.minecraft.client.gui.components.Button header =
@@ -112,7 +97,6 @@ public final class OptionsListTarget
         addBig(header);
     }
 
-    // ── Internal factory ──────────────────────────────────────────────────────
 
     /**
      * Reflects the {@link OptionsList} field from the given Accessibility Options screen.
