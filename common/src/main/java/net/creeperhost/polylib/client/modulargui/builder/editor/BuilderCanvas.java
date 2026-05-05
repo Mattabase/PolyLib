@@ -106,6 +106,21 @@ public class BuilderCanvas extends GuiElement<BuilderCanvas> implements Backgrou
 
     // ── Input ─────────────────────────────────────────────────────────────────
 
+    // Override root handlers to block ALL mouse events from reaching preview children.
+    // The preview is display-only; every interaction goes through the canvas itself.
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button, boolean consumed) {
+        if (consumed) return false;
+        return mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button, boolean consumed) {
+        if (consumed) return false;
+        return mouseReleased(mouseX, mouseY, button);
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button != 0) return false;
@@ -153,10 +168,10 @@ public class BuilderCanvas extends GuiElement<BuilderCanvas> implements Backgrou
                 elem.constraints.put("left", net.creeperhost.polylib.client.modulargui.builder.ConstraintSpec.relative("root", "LEFT", newLeft));
                 elem.constraints.put("top",  net.creeperhost.polylib.client.modulargui.builder.ConstraintSpec.relative("root", "TOP",  newTop));
                 rebuildPreview();
-                if (onSelectionChanged != null) onSelectionChanged.run();
+                // Don't notify inspector on every drag frame — update once on release
             }
         }
-        super.mouseMoved(mouseX, mouseY);
+        // Do NOT call super: preview children must not receive mouse events
     }
 
     @Override
@@ -165,6 +180,8 @@ public class BuilderCanvas extends GuiElement<BuilderCanvas> implements Backgrou
             dragging = false;
             if (dragPushedUndo) {
                 state.dirty = true;
+                // Notify inspector now that drag is finished so it shows final values
+                if (onSelectionChanged != null) onSelectionChanged.run();
             }
             return true;
         }

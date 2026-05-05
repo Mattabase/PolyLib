@@ -160,6 +160,7 @@ public class BuilderInspector extends GuiElement<BuilderInspector> implements Ba
     private void applyConstraint(GeoParam param, String rawValue) {
         GuiLayoutElement selected = state.selectedElement();
         if (selected == null) return;
+        if (rawValue.trim().isEmpty()) return; // nothing to apply
 
         double parsed;
         try {
