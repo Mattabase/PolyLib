@@ -84,7 +84,7 @@ public class BuilderInspector extends GuiElement<BuilderInspector> implements Ba
         if (selected == null) {
             GuiText noSel = new GuiText(content,
                     () -> Component.literal("No element selected")).setTextColour(LABEL_COLOUR);
-            noSel.constrain(LEFT,   literal(PADDING));
+            noSel.constrain(LEFT,   dynamic(() -> content.xMin() + PADDING));
             noSel.constrain(TOP,    literal(PADDING));
             noSel.constrain(WIDTH,  dynamic(() -> content.xSize() - PADDING * 2));
             noSel.constrain(HEIGHT, literal(ROW_HEIGHT));
@@ -126,7 +126,7 @@ public class BuilderInspector extends GuiElement<BuilderInspector> implements Ba
             final GeoParam capturedParam = param;
             GuiTextField field = new GuiTextField(content);
             field.setValue(currentValue);
-            field.constrain(LEFT,   literal(PADDING));
+            field.constrain(LEFT,   dynamic(() -> content.xMin() + PADDING));
             field.constrain(TOP,    literal(fieldTop));
             field.constrain(WIDTH,  dynamic(() -> content.xSize() - PADDING * 2));
             field.constrain(HEIGHT, literal(ROW_HEIGHT));
@@ -150,7 +150,7 @@ public class BuilderInspector extends GuiElement<BuilderInspector> implements Ba
     private GuiText addLabel(GuiElement<?> parent, String text, double yOffset) {
         GuiText label = new GuiText(parent, () -> Component.literal(text));
         label.setTextColour(LABEL_COLOUR);
-        label.constrain(LEFT,   literal(PADDING));
+        label.constrain(LEFT,   dynamic(() -> parent.xMin() + PADDING));
         label.constrain(TOP,    literal(yOffset));
         label.constrain(WIDTH,  dynamic(() -> parent.xSize() - PADDING * 2));
         label.constrain(HEIGHT, literal(ROW_HEIGHT));

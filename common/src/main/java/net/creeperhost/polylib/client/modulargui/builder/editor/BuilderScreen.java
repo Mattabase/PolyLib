@@ -193,7 +193,7 @@ public class BuilderScreen implements GuiProvider {
                 () -> Component.literal(buildStatusText()));
         statusText.setTextColour(0xFF999999);
         statusText.constrain(LEFT,   literal(statusLeft));
-        statusText.constrain(TOP,    literal(2));
+        statusText.constrain(TOP,    relative(toolbar.get(TOP), 2));
         statusText.constrain(RIGHT,  dynamic(() -> toolbar.xMax() - 4));
         statusText.constrain(HEIGHT, literal(16));
     }
@@ -219,7 +219,7 @@ public class BuilderScreen implements GuiProvider {
     private GuiButton makeToolbarButton(GuiElement<?> parent, String label, double xOffset) {
         GuiButton btn = new GuiButton(parent);
         btn.constrain(LEFT,   literal(xOffset));
-        btn.constrain(TOP,    literal(2));
+        btn.constrain(TOP,    relative(parent.get(TOP), 2));
         btn.constrain(WIDTH,  literal(40));
         btn.constrain(HEIGHT, literal(16));
         new GuiRectangle(btn).rectangle(0xFF333333, 0xFF555555);

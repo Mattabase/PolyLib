@@ -88,8 +88,8 @@ public class BuilderPalette extends GuiElement<BuilderPalette> {
 
         // Place the new element at a reasonable default size in the preview
         spec.constraints = new java.util.LinkedHashMap<>();
-        spec.constraints.put("left",   net.creeperhost.polylib.client.modulargui.builder.ConstraintSpec.literal(20));
-        spec.constraints.put("top",    net.creeperhost.polylib.client.modulargui.builder.ConstraintSpec.literal(20));
+        spec.constraints.put("left",   net.creeperhost.polylib.client.modulargui.builder.ConstraintSpec.relative("root", "LEFT", 20));
+        spec.constraints.put("top",    net.creeperhost.polylib.client.modulargui.builder.ConstraintSpec.relative("root", "TOP", 20));
         spec.constraints.put("width",  net.creeperhost.polylib.client.modulargui.builder.ConstraintSpec.literal(60));
         spec.constraints.put("height", net.creeperhost.polylib.client.modulargui.builder.ConstraintSpec.literal(20));
 
