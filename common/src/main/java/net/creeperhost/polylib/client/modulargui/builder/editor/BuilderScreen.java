@@ -30,13 +30,12 @@ import static net.creeperhost.polylib.client.modulargui.lib.geometry.GeoParam.*;
  *
  * <h3>Layout</h3>
  * <pre>
- * ┌──────────────────────────────────────────────────┐
- * │ Palette (120) │      Canvas (flex)      │ Inspector (240) │
- * │               │                         │                 │
- * │               │                         │                 │
- * ├──────┬─────────────────────────────────────────  ┤
- * │ Save │ Undo │ Redo │                 status        │
- * └──────────────────────────────────────────────────┘
+ * +--------------------------------------------------+
+ * | Palette (120) | Canvas (flex)       | Inspector (240) |
+ * |               |                     |                 |
+ * +---------------+---------------------+-----------------+
+ * | Save | Undo | Redo |           status                  |
+ * +--------------------------------------------------+
  * </pre>
  */
 public class BuilderScreen implements GuiProvider {

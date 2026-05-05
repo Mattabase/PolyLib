@@ -85,6 +85,10 @@ public class JsonGuiProvider implements GuiProvider {
         return layout;
     }
 
+    public void setLayout(GuiLayout layout) {
+        this.layout = layout;
+    }
+
     /**
      * @return the element map from the most recent {@link #buildGui} or {@link #buildInto} call,
      *         keyed by element ID. The {@code "root"} key is absent from this map.

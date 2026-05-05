@@ -39,6 +39,12 @@ public class BuilderCanvas extends GuiElement<BuilderCanvas> implements Backgrou
     @Nullable
     private Runnable onSelectionChanged;
 
+    // ── Drag state ────────────────────────────────────────────────────────────
+    private boolean dragging = false;
+    private boolean dragPushedUndo = false;
+    private double dragStartMouseX, dragStartMouseY;
+    private double dragStartLeft, dragStartTop;
+
     public BuilderCanvas(@NotNull GuiParent<?> parent, BuilderState state, JsonGuiProvider provider) {
         super(parent);
         this.state = state;
@@ -68,6 +74,8 @@ public class BuilderCanvas extends GuiElement<BuilderCanvas> implements Backgrou
 
     /** Rebuild the preview children from the current state layout. */
     public void rebuildPreview() {
+        // Sync provider layout with current state (may have changed via undo/redo)
+        provider.setLayout(state.layout);
         // Remove all existing children from previewRoot
         new java.util.ArrayList<>(previewRoot.getChildren()).forEach(previewRoot::removeChild);
         // Build into the preview root
@@ -109,9 +117,57 @@ public class BuilderCanvas extends GuiElement<BuilderCanvas> implements Backgrou
                 hit = entry.getKey();
             }
         }
-        if (java.util.Objects.equals(state.selectedId, hit)) return false; // no change
+        boolean selectionChanged = !java.util.Objects.equals(state.selectedId, hit);
         state.selectedId = hit;
-        if (onSelectionChanged != null) onSelectionChanged.run();
-        return true;
+        if (selectionChanged && onSelectionChanged != null) onSelectionChanged.run();
+
+        // Start drag if we hit an element
+        if (hit != null) {
+            GuiElement<?> hitElem = provider.getBuiltElements().get(hit);
+            if (hitElem != null) {
+                dragging = true;
+                dragPushedUndo = false;
+                dragStartMouseX = mouseX;
+                dragStartMouseY = mouseY;
+                dragStartLeft = hitElem.xMin() - previewRoot.xMin();
+                dragStartTop  = hitElem.yMin() - previewRoot.yMin();
+            }
+            return true;
+        }
+        return selectionChanged;
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        if (dragging && state.selectedId != null) {
+            net.creeperhost.polylib.client.modulargui.builder.GuiLayoutElement elem = state.selectedElement();
+            if (elem != null) {
+                // Push undo snapshot before first mutation
+                if (!dragPushedUndo) {
+                    state.undoStack.push(state.layout);
+                    dragPushedUndo = true;
+                }
+                double newLeft = dragStartLeft + (mouseX - dragStartMouseX);
+                double newTop  = dragStartTop  + (mouseY - dragStartMouseY);
+                if (elem.constraints == null) elem.constraints = new java.util.LinkedHashMap<>();
+                elem.constraints.put("left", net.creeperhost.polylib.client.modulargui.builder.ConstraintSpec.relative("root", "LEFT", newLeft));
+                elem.constraints.put("top",  net.creeperhost.polylib.client.modulargui.builder.ConstraintSpec.relative("root", "TOP",  newTop));
+                rebuildPreview();
+                if (onSelectionChanged != null) onSelectionChanged.run();
+            }
+        }
+        super.mouseMoved(mouseX, mouseY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == 0 && dragging) {
+            dragging = false;
+            if (dragPushedUndo) {
+                state.dirty = true;
+            }
+            return true;
+        }
+        return false;
     }
 }
