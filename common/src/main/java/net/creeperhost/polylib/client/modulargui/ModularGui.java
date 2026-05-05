@@ -364,6 +364,22 @@ public class ModularGui implements GuiParent<ModularGui> {
         }
     }
 
+    /**
+     * Tears down and rebuilds this GUI in-place without closing the screen.
+     * <p>
+     * All child elements of the root are removed and {@link GuiProvider#buildGui(ModularGui)} is called
+     * again. Useful for hot-reload workflows where the underlying layout JSON has changed.
+     */
+    public void rebuild() {
+        try {
+            // Clear all children from the root element
+            new java.util.ArrayList<>(root.getChildren()).forEach(root::removeChild);
+            provider.buildGui(this);
+        } catch (Throwable ex) {
+            LOGGER.error("An error occurred while rebuilding a modular gui", ex);
+        }
+    }
+
     @Override
     public Minecraft mc() {
         return mc;

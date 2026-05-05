@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -41,9 +42,20 @@ public class JsonGuiProvider implements GuiProvider {
 
     private static final Logger LOGGER = LogManager.getLogger(JsonGuiProvider.class);
 
-    private final GuiLayout layout;
+    private GuiLayout layout;
     private HookResolver hookResolver = HookResolver.NOOP;
     private DataBindingResolver bindingResolver = DataBindingResolver.NOOP;
+
+    /** Last ModularGui used in buildGui() — held weakly so we don't prevent GC. */
+    @Nullable
+    private WeakReference<ModularGui> lastGui;
+
+    /** Last built element map, keyed by element ID. */
+    private final Map<String, GuiElement<?>> builtElements = new LinkedHashMap<>();
+
+    /** Active hot-reload watcher, if any. */
+    @Nullable
+    private LayoutWatcher watcher;
 
     public JsonGuiProvider(GuiLayout layout) {
         this.layout = layout;
@@ -73,6 +85,58 @@ public class JsonGuiProvider implements GuiProvider {
         return layout;
     }
 
+    /**
+     * @return the element map from the most recent {@link #buildGui} or {@link #buildInto} call,
+     *         keyed by element ID. The {@code "root"} key is absent from this map.
+     */
+    public Map<String, GuiElement<?>> getBuiltElements() {
+        return Collections.unmodifiableMap(builtElements);
+    }
+
+    // ── Hot reload ────────────────────────────────────────────────────────────
+
+    /**
+     * Start watching {@code path} for changes. When the file is modified, the layout is
+     * reloaded and the live GUI (if still open) is rebuilt in-place.
+     *
+     * <p>At most one watcher is active per provider instance. Calling this again replaces
+     * the previous watcher.
+     *
+     * @param path the JSON layout file to watch
+     * @return {@code this} for chaining
+     */
+    public JsonGuiProvider watchForChanges(Path path) {
+        stopWatching();
+        watcher = new LayoutWatcher(path, () -> hotReload(path));
+        return this;
+    }
+
+    /** Stop the active file watcher, if any. */
+    public void stopWatching() {
+        if (watcher != null) {
+            watcher.close();
+            watcher = null;
+        }
+    }
+
+    /**
+     * Reload the layout from {@code path} and rebuild the live GUI if one is open.
+     * Safe to call from the client tick thread.
+     */
+    public void hotReload(Path path) {
+        GuiLayout newLayout = GuiLayout.fromPath(path);
+        if (newLayout == null) {
+            LOGGER.warn("JsonGuiProvider.hotReload: failed to parse '{}'", path);
+            return;
+        }
+        this.layout = newLayout;
+        ModularGui gui = lastGui != null ? lastGui.get() : null;
+        if (gui != null) {
+            gui.rebuild();
+            LOGGER.info("JsonGuiProvider: hot-reloaded '{}'", path.getFileName());
+        }
+    }
+
     // ── GuiProvider ───────────────────────────────────────────────────────────
 
     @Override
@@ -82,13 +146,31 @@ public class JsonGuiProvider implements GuiProvider {
 
     @Override
     public void buildGui(ModularGui gui) {
+        lastGui = new WeakReference<>(gui);
         // Initialise root dimensions / position constraints
         switch (layout.type) {
             case SCREEN -> gui.initStandardGui(layout.defaultWidth, layout.defaultHeight);
             case HUD, INJECTION -> gui.initFullscreenGui();
         }
+        buildElements(gui.getRoot());
+    }
 
-        GuiElement<?> guiRoot = gui.getRoot();
+    /**
+     * Build this layout's elements as children of {@code root} without calling
+     * {@link ModularGui#initStandardGui} or {@link ModularGui#initFullscreenGui}.
+     * <p>
+     * Useful for embedding a layout preview inside another GUI element (e.g. the builder canvas).
+     *
+     * @param root the element to use as the layout root; receives all top-level elements as children
+     */
+    public void buildInto(GuiElement<?> root) {
+        buildElements(root);
+    }
+
+    // ── Internal build logic ──────────────────────────────────────────────────
+
+    private void buildElements(GuiElement<?> guiRoot) {
+        builtElements.clear();
 
         // Single map used for both parent resolution and constraint ref resolution.
         // "root" always maps to the GUI root element.
@@ -166,6 +248,7 @@ public class JsonGuiProvider implements GuiProvider {
 
             // ── Register for future references ────────────────────────────────
             elementMap.put(spec.id, element);
+            builtElements.put(spec.id, element);
         }
     }
 
