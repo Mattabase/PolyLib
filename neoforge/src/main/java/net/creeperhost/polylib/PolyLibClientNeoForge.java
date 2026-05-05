@@ -1,8 +1,11 @@
 package net.creeperhost.polylib;
 
+import net.creeperhost.polylib.client.config.ConfigPanelRegistry;
 import net.creeperhost.polylib.client.modulargui.sprite.PolyTextures;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.resources.model.sprite.AtlasManager;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterTextureAtlasesEvent;
 import net.neoforged.neoforge.client.event.TextureAtlasStitchedEvent;
 
@@ -12,6 +15,7 @@ public class PolyLibClientNeoForge
     {
         eventBus.addListener(PolyLibClientNeoForge::atlasStitched);
         eventBus.addListener(PolyLibClientNeoForge::registerTextureAtlas);
+        eventBus.addListener(PolyLibClientNeoForge::registerKeyMappings);
     }
 
     private static void registerTextureAtlas(RegisterTextureAtlasesEvent event) {
@@ -22,6 +26,12 @@ public class PolyLibClientNeoForge
     private static void atlasStitched(TextureAtlasStitchedEvent event) {
         if (event.getAtlas().location().equals(PolyTextures.TEXTURE_ID)) {
             PolyTextures.setAtlas(event.getAtlas());
+        }
+    }
+
+    private static void registerKeyMappings(RegisterKeyMappingsEvent event) {
+        for (KeyMapping km : ConfigPanelRegistry.getAllKeyMappings()) {
+            event.register(km);
         }
     }
 }
