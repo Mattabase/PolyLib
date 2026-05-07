@@ -4,6 +4,8 @@ import io.netty.buffer.Unpooled;
 import net.creeperhost.polylib.Constants;
 import net.creeperhost.polylib.accessibility.AccessibilityPrefsC2SPayload;
 import net.creeperhost.polylib.accessibility.AccessibilityPrefsManager;
+import net.creeperhost.polylib.chunkmap.common.network.*;
+import net.creeperhost.polylib.chunkmap.server.PolyChunkMapServer;
 import net.creeperhost.polylib.network.PolyLibNetwork;
 import net.creeperhost.polylib.network.packets.*;
 import net.creeperhost.polylib.platform.services.INetworkHelper;
@@ -76,6 +78,35 @@ public class NeoForgeNetworkHelper implements INetworkHelper
             ServerPlayer sp = (ServerPlayer) ctx.player();
             ctx.enqueueWork(() -> PlayerClientSettingsManager.applyFromClient(sp, payload.typeId(), payload.data()));
         });
+
+        // ── ChunkMap payloads ───────────────────────────────────────────────────
+        registrar.playToClient(PolyChunkMapHelloPayload.TYPE, PolyChunkMapHelloPayload.CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() ->
+                        net.creeperhost.polylib.chunkmap.client.PolyChunkMapClient.onHello()));
+        registrar.playToClient(PolyChunkMapByePayload.TYPE, PolyChunkMapByePayload.CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() ->
+                        net.creeperhost.polylib.chunkmap.client.PolyChunkMapClient.onBye()));
+        registrar.playToClient(PolyChunkMapDataPayload.TYPE, PolyChunkMapDataPayload.CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() ->
+                        net.creeperhost.polylib.chunkmap.client.PolyChunkMapClient.onData(payload)));
+        registrar.playToClient(PolyChunkMapUnloadPayload.TYPE, PolyChunkMapUnloadPayload.CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() ->
+                        net.creeperhost.polylib.chunkmap.client.PolyChunkMapClient.onUnload(payload)));
+        registrar.playToServer(PolyChunkMapStartPayload.TYPE, PolyChunkMapStartPayload.CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() -> {
+                    PolyChunkMapServer server = PolyChunkMapServer.getInstance();
+                    if (server != null) server.handleStart(payload, (ServerPlayer) ctx.player());
+                }));
+        registrar.playToServer(PolyChunkMapStopPayload.TYPE, PolyChunkMapStopPayload.CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() -> {
+                    PolyChunkMapServer server = PolyChunkMapServer.getInstance();
+                    if (server != null) server.handleStop(payload, (ServerPlayer) ctx.player());
+                }));
+        registrar.playToServer(PolyChunkMapRefreshPayload.TYPE, PolyChunkMapRefreshPayload.CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() -> {
+                    PolyChunkMapServer server = PolyChunkMapServer.getInstance();
+                    if (server != null) server.handleRefresh(payload, (ServerPlayer) ctx.player());
+                }));
     }
 
     @Override
