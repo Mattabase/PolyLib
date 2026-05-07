@@ -10,7 +10,12 @@ public class PolyLibClient
     public static void init()
     {
         InternalEventListenerClient.init();
+        // Chunk-map: clear client cache on disconnect
+
+        net.creeperhost.polylib.event.events.client.PolyClientConnectionEvents.CLIENT_PLAY_DISCONNECT
+                .register((handler, client) -> net.creeperhost.polylib.chunkmap.client.PolyChunkMapClient.reset());
     }
+
 
     public static Player getClientPlayer()
     {

@@ -2,6 +2,7 @@ package net.creeperhost.polylib;
 
 // TODO: depends on feat/accessibility PR being merged — AccessibilityPrefsManager lives there
 import net.creeperhost.polylib.accessibility.AccessibilityPrefsManager;
+import net.creeperhost.polylib.chunkmap.server.PolyChunkMapServer;
 import net.creeperhost.polylib.event.data.CancelContext;
 import net.creeperhost.polylib.event.events.server.PolyChatEvents;
 import net.creeperhost.polylib.event.events.server.PolyBlockEvents;
@@ -75,6 +76,9 @@ public final class FabricServerEvents
             PlayerClientSettingsManager.onPlayerLogin(player);
             PlayerServerDataManager.onPlayerLogin(player);
             PolyPlayerEvents.LOGIN.invoker().onLogin(player);
+            // Chunk-map: send Hello if permitted
+            PolyChunkMapServer chunkMapServer = PolyChunkMapServer.getInstance();
+            if (chunkMapServer != null) chunkMapServer.onPlayerJoin(player, server);
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
@@ -159,7 +163,12 @@ public final class FabricServerEvents
             PolyServerTickEvents.LEVEL_TICK_START.invoker().onLevelTickStart(level));
 
         ServerTickEvents.END_LEVEL_TICK.register(level ->
-            PolyServerTickEvents.LEVEL_TICK_END.invoker().onLevelTickEnd(level));
+        {
+            PolyServerTickEvents.LEVEL_TICK_END.invoker().onLevelTickEnd(level);
+            // Chunk-map: flush dirty chunks to watching clients
+            PolyChunkMapServer chunkMapServer = PolyChunkMapServer.getInstance();
+            if (chunkMapServer != null) chunkMapServer.onLevelTick(level);
+        });
 
         // ----- Level (world) events -----
 
