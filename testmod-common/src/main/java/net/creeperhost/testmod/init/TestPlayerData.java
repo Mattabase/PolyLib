@@ -63,6 +63,58 @@ public final class TestPlayerData
             true
     );
 
+    // ── Offline-accessor coverage types ──────────────────────────────────────────
+    // Used by /polytest playerdata to exercise the full login/logout lifecycle.
+    // Also consumed by the DisCraftHonored testmod for OfflinePlayerDataAccessor tests.
+
+    /** Lifecycle test: plain int, no sync, no copyOnDeath. */
+    public static final PlayerServerDataType<Integer> OFFLINE_INT =
+        PlayerServerDataRegistry.register(
+            Identifier.fromNamespaceAndPath(TestModCommon.MOD_ID, "offline_int"),
+            Codec.INT,
+            null,
+            () -> 0,
+            false);
+
+    /** Lifecycle test: string — round-trip and modify() coverage. */
+    public static final PlayerServerDataType<String> OFFLINE_STRING =
+        PlayerServerDataRegistry.register(
+            Identifier.fromNamespaceAndPath(TestModCommon.MOD_ID, "offline_string"),
+            Codec.STRING,
+            null,
+            () -> "unset",
+            false);
+
+    /** Lifecycle test: boolean — default-value coverage. */
+    public static final PlayerServerDataType<Boolean> OFFLINE_BOOL =
+        PlayerServerDataRegistry.register(
+            Identifier.fromNamespaceAndPath(TestModCommon.MOD_ID, "offline_bool"),
+            Codec.BOOL,
+            null,
+            () -> false,
+            false);
+
+    /** Lifecycle test: copyOnDeath=true — must not be corrupted by writes to sibling keys. */
+    public static final PlayerServerDataType<Integer> OFFLINE_COPY_ON_DEATH =
+        PlayerServerDataRegistry.register(
+            Identifier.fromNamespaceAndPath(TestModCommon.MOD_ID, "offline_copy_on_death"),
+            Codec.INT,
+            null,
+            () -> 0,
+            true);
+
+    /** Lifecycle test: syncsToClient=true — set() must still trigger S2C sync. */
+    public static final PlayerServerDataType<Integer> OFFLINE_SYNCABLE =
+        PlayerServerDataRegistry.register(
+            Identifier.fromNamespaceAndPath(TestModCommon.MOD_ID, "offline_syncable"),
+            Codec.INT,
+            StreamCodec.of(
+                (buf, v) -> buf.writeInt(v),
+                buf -> buf.readInt()),
+            () -> 0,
+            false);
+
+
     public static void init()
     {
         // Static fields are initialised above; this method exists so TestModCommon can

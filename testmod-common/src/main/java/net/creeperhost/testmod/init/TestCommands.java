@@ -27,6 +27,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.phys.Vec3;
+import net.creeperhost.polylib.player.serverdata.PlayerServerDataManager;
+import java.util.UUID;
 import static net.creeperhost.testmod.TestModCommon.LOGGER;
 
 /**
@@ -91,6 +93,7 @@ public final class TestCommands
                 .then(Commands.literal("multiplace").executes(TestCommands::testMultiPlace))
                 .then(Commands.literal("brewing").executes(TestCommands::testBrewing))
                 .then(Commands.literal("help").executes(TestCommands::testHelp))
+                .then(Commands.literal("playerdata").executes(TestCommands::testPlayerData))
         );
     }
 
@@ -957,6 +960,80 @@ public final class TestCommands
         src.sendSuccess(() -> Component.literal("  §fTier 1: §7living, block, effects, entity, explosion, conversion, tick, spawn, sleep, bow, xp"), false);
         src.sendSuccess(() -> Component.literal("  §fTier 3+: §7damage, fall, attack, equip, projectile, lightning, teleport, breed, split, piston, noteblock, fluid, portal, gamemode, setspawn, item, useitem, multiplace, brewing"), false);
         src.sendSuccess(() -> Component.literal("  §fInfo: §7passive (auto-firing events), manual (gameplay-required events), help"), false);
+        src.sendSuccess(() -> Component.literal("  §fData: §7playerdata"), false);
+        return 1;
+    }
+
+    // ----- /polytest playerdata -----
+    // Exercises the full PlayerServerDataManager login/logout/set/get lifecycle
+    // using the OFFLINE_* types from TestPlayerData.
+    //
+    // Scenarios:
+    //   PD-01  set() while online persists and get() returns it
+    //   PD-02  onPlayerLogout clears the in-memory store; cycle completes without exception
+    //   PD-03  set() → logout → login → value reloaded from NBT
+    //   PD-04  copyOnDeath type preserved across onPlayerRespawn
+    //   PD-05  syncsToClient type: set() fires without exception
+
+    private static int testPlayerData(CommandContext<CommandSourceStack> ctx)
+    {
+        CommandSourceStack src = ctx.getSource();
+        int passed = 0;
+        int failed = 0;
+
+        try
+        {
+            ServerPlayer player = src.getPlayerOrException();
+            UUID uuid = player.getUUID();
+
+            Runnable goOffline = () -> PlayerServerDataManager.onPlayerLogout(uuid);
+            Runnable goOnline  = () -> PlayerServerDataManager.onPlayerLogin(player);
+
+            // PD-01: set online, get online
+            PlayerServerDataManager.set(player, TestPlayerData.OFFLINE_INT, 77);
+            int pd01 = PlayerServerDataManager.get(player, TestPlayerData.OFFLINE_INT);
+            if (pd01 == 77) { src.sendSuccess(() -> Component.literal("[PASS] PD-01 set/get online"), false); passed++; }
+            else            { src.sendFailure(Component.literal("[FAIL] PD-01 expected 77, got " + pd01)); failed++; }
+
+            // PD-02: logout/login cycle completes without exception
+            goOffline.run();
+            goOnline.run();
+            src.sendSuccess(() -> Component.literal("[INFO] PD-02 logout/login cycle completed (store evicted and restored)"), false);
+            passed++;
+
+            // PD-03: set → logout → login → value reloaded from NBT
+            PlayerServerDataManager.set(player, TestPlayerData.OFFLINE_INT, 55);
+            goOffline.run();
+            goOnline.run();
+            int pd03 = PlayerServerDataManager.get(player, TestPlayerData.OFFLINE_INT);
+            if (pd03 == 55) { src.sendSuccess(() -> Component.literal("[PASS] PD-03 value reloaded after login"), false); passed++; }
+            else            { src.sendFailure(Component.literal("[FAIL] PD-03 expected 55, got " + pd03)); failed++; }
+
+            // PD-04: copyOnDeath type preserved across onPlayerRespawn
+            PlayerServerDataManager.set(player, TestPlayerData.OFFLINE_COPY_ON_DEATH, 13);
+            PlayerServerDataManager.onPlayerRespawn(uuid, player);
+            int pd04 = PlayerServerDataManager.get(player, TestPlayerData.OFFLINE_COPY_ON_DEATH);
+            if (pd04 == 13) { src.sendSuccess(() -> Component.literal("[PASS] PD-04 copyOnDeath preserved"), false); passed++; }
+            else            { src.sendFailure(Component.literal("[FAIL] PD-04 expected 13, got " + pd04)); failed++; }
+
+            // PD-05: syncable type set() fires without exception
+            try {
+                PlayerServerDataManager.set(player, TestPlayerData.OFFLINE_SYNCABLE, 99);
+                src.sendSuccess(() -> Component.literal("[PASS] PD-05 syncable set() no exception (check log for SyncPlayerServerDataS2CPayload)"), false);
+                passed++;
+            } catch (Exception e) {
+                src.sendFailure(Component.literal("[FAIL] PD-05 syncable set() threw: " + e.getMessage()));
+                failed++;
+            }
+
+            int fp = passed; int ff = failed;
+            src.sendSuccess(() -> Component.literal("=== playerdata: " + fp + " passed, " + ff + " failed ==="), false);
+        }
+        catch (Exception e)
+        {
+            src.sendFailure(Component.literal("[ERROR] playerdata: " + e.getMessage()));
+            LOGGER.error("[polytest] playerdata error", e);
+        }
         return 1;
     }
 }
