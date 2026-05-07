@@ -1,0 +1,7 @@
+﻿
+> Task :buildSrc:compileJava UP-TO-DATE
+> Task :common:compileJava
+> Task :neoforge:compileJava
+BUILD SUCCESSFUL in 14s
+
+

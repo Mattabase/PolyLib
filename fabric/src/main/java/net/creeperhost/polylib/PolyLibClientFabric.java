@@ -18,6 +18,7 @@ import net.creeperhost.polylib.event.events.client.PolyScreenEvents;
 import net.creeperhost.polylib.network.PolyLibNetwork;
 import net.creeperhost.polylib.chunkmap.client.PolyChunkMapClient;
 import net.creeperhost.polylib.chunkmap.common.network.*;
+import net.creeperhost.polylib.client.screen.chunkmap.PolyChunkMapKeys;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientBlockEntityEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;

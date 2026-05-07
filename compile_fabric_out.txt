@@ -1,0 +1,7 @@
+﻿
+> Task :buildSrc:compileJava UP-TO-DATE
+> Task :common:compileJava UP-TO-DATE
+> Task :fabric:compileJava
+BUILD SUCCESSFUL in 12s
+
+
