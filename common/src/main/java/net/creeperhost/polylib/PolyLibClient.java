@@ -21,6 +21,9 @@ public class PolyLibClient
     {
         InternalEventListenerClient.init();
         registerBuilderScreen();
+        // Chunk-map: clear client cache on disconnect
+        net.creeperhost.polylib.event.events.client.PolyClientConnectionEvents.CLIENT_PLAY_DISCONNECT
+                .register((handler, client) -> net.creeperhost.polylib.chunkmap.client.PolyChunkMapClient.reset());
     }
 
     private static void registerBuilderScreen()

@@ -3,6 +3,8 @@ package net.creeperhost.polylib.platform;
 import io.netty.buffer.Unpooled;
 import net.creeperhost.polylib.accessibility.AccessibilityPrefsC2SPayload;
 import net.creeperhost.polylib.accessibility.AccessibilityPrefsManager;
+import net.creeperhost.polylib.chunkmap.common.network.*;
+import net.creeperhost.polylib.chunkmap.server.PolyChunkMapServer;
 import net.creeperhost.polylib.network.PolyLibNetwork;
 import net.creeperhost.polylib.network.packets.*;
 import net.creeperhost.polylib.platform.services.INetworkHelper;
@@ -38,6 +40,15 @@ public class FabricNetworkHelper implements INetworkHelper
         PayloadTypeRegistry.serverboundPlay().register(AccessibilityPrefsC2SPayload.TYPE, AccessibilityPrefsC2SPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UpdatePlayerClientSettingC2SPayload.TYPE, UpdatePlayerClientSettingC2SPayload.CODEC);
 
+        // ── ChunkMap payloads ─────────────────────────────────────────────────
+        PayloadTypeRegistry.clientboundPlay().register(PolyChunkMapHelloPayload.TYPE, PolyChunkMapHelloPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PolyChunkMapByePayload.TYPE, PolyChunkMapByePayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PolyChunkMapDataPayload.TYPE, PolyChunkMapDataPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PolyChunkMapUnloadPayload.TYPE, PolyChunkMapUnloadPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(PolyChunkMapStartPayload.TYPE, PolyChunkMapStartPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(PolyChunkMapStopPayload.TYPE, PolyChunkMapStopPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(PolyChunkMapRefreshPayload.TYPE, PolyChunkMapRefreshPayload.CODEC);
+
         ServerPlayNetworking.registerGlobalReceiver(ContainerServerPayload.TYPE, (payload, context) ->
         {
             ServerPlayer player = context.player();
@@ -64,6 +75,32 @@ public class FabricNetworkHelper implements INetworkHelper
             ServerPlayer sp = context.player();
             context.server().execute(() ->
                     PlayerClientSettingsManager.applyFromClient(sp, payload.typeId(), payload.data()));
+        });
+
+        // ── ChunkMap C2S handlers ─────────────────────────────────────────────
+        ServerPlayNetworking.registerGlobalReceiver(PolyChunkMapStartPayload.TYPE, (payload, context) ->
+        {
+            ServerPlayer sp = context.player();
+            context.server().execute(() -> {
+                PolyChunkMapServer server = PolyChunkMapServer.getInstance();
+                if (server != null) server.handleStart(payload, sp);
+            });
+        });
+        ServerPlayNetworking.registerGlobalReceiver(PolyChunkMapStopPayload.TYPE, (payload, context) ->
+        {
+            ServerPlayer sp = context.player();
+            context.server().execute(() -> {
+                PolyChunkMapServer server = PolyChunkMapServer.getInstance();
+                if (server != null) server.handleStop(payload, sp);
+            });
+        });
+        ServerPlayNetworking.registerGlobalReceiver(PolyChunkMapRefreshPayload.TYPE, (payload, context) ->
+        {
+            ServerPlayer sp = context.player();
+            context.server().execute(() -> {
+                PolyChunkMapServer server = PolyChunkMapServer.getInstance();
+                if (server != null) server.handleRefresh(payload, sp);
+            });
         });
     }
 
