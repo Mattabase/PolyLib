@@ -151,6 +151,13 @@ public class PolyChunkTracker
         if (s != null) { s.tickingStatusLevel = level; markDirty(packed); }
     }
 
+    /** Update the status level. */
+    public void setStatusLevel(long packed, int level)
+    {
+        MutableState s = chunks.get(packed);
+        if (s != null) { s.statusLevel = level; markDirty(packed); }
+    }
+
     /**
      * Queue a stage update from an off-thread context.
      * Applied to the main state during the next {@link #tick()}.

@@ -35,10 +35,7 @@ public class PolyTicketStorageMixin implements PolyChunkTrackerReference
 
     @Inject(
             method = "addTicket(JLnet/minecraft/server/level/Ticket;)Z",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Ljava/util/List;iterator()Ljava/util/Iterator;"
-            )
+            at = @At("RETURN")
     )
     private void polylib$onAddTicket(long pos, Ticket ticket,
                                      CallbackInfoReturnable<Boolean> cir)
@@ -57,8 +54,24 @@ public class PolyTicketStorageMixin implements PolyChunkTrackerReference
     private void polylib$onRemoveTicket(long pos, Ticket ticket,
                                          CallbackInfoReturnable<Boolean> cir)
     {
-        if (cir.getReturnValue() && polylib$tracker != null) {
+        if (polylib$tracker != null) {
             polylib$tracker.setTickets(pos, tickets.getOrDefault(pos, List.of()));
+        }
+    }
+
+    @Inject(
+            method = "removeTicketIf",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lit/unimi/dsi/fastutil/longs/Long2ObjectMap$Entry;getValue()Ljava/lang/Object;",
+                    ordinal = 3,
+                    remap = false
+            )
+    )
+    private void polylib$onRemoveTicketIf(java.util.function.BiPredicate<Ticket, Long> predicate, it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<List<Ticket>> map, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci, @com.llamalad7.mixinextras.sugar.Local it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry<List<Ticket>> entry)
+    {
+        if (polylib$tracker != null) {
+            polylib$tracker.setTickets(entry.getLongKey(), entry.getValue());
         }
     }
 
@@ -76,3 +89,5 @@ public class PolyTicketStorageMixin implements PolyChunkTrackerReference
         return this.polylib$tracker;
     }
 }
+
+

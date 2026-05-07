@@ -86,9 +86,14 @@ public final class PolyChunkMapClient
         Map<Long, PolyChunkMapData> dim = CHUNKS.get(payload.dimension());
         if (dim == null) return;
 
+        long currentTick = net.minecraft.client.Minecraft.getInstance().level != null ? net.minecraft.client.Minecraft.getInstance().level.getGameTime() : 0;
+
         for (long pos : payload.positions())
         {
-            dim.remove(pos);
+            PolyChunkMapData data = dim.remove(pos);
+            if (data != null) {
+                net.creeperhost.polylib.chunkmap.client.PolyChunkGridRenderer.fadingChunks.put(pos, new net.creeperhost.polylib.chunkmap.client.PolyChunkGridRenderer.FadingChunk(data, currentTick));
+            }
         }
     }
 

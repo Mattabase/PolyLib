@@ -40,10 +40,10 @@ public abstract class PolyChunkMapMixin
                     target = "Lnet/minecraft/server/level/ChunkMap;scheduleUnload(JLnet/minecraft/server/level/ChunkHolder;)V"
             )
     )
-    private void polylib$onScheduleUnload(BooleanSupplier hasMoreTime, CallbackInfo ci)
+    private void polylib$onScheduleUnload(BooleanSupplier hasMoreTime, CallbackInfo ci, @com.llamalad7.mixinextras.sugar.Local(ordinal = 0, type = long.class) long pos)
     {
-        // We can't get 'pos' here from a local without MixinExtras, so we handle
-        // unloading in PolyChunkHolderMixin.onUpdateFutures via the holder itself.
+        PolyChunkTracker tracker = ((PolyChunkTrackerHolder) level).polylib$getChunkTracker();
+        tracker.setUnloading(pos, true);
     }
 
     // ── Full unload: remove from tracker ──────────────────────────────────────
@@ -87,3 +87,5 @@ public abstract class PolyChunkMapMixin
         tracker.queueStage(chunk.getPos().pack(), target);
     }
 }
+
+

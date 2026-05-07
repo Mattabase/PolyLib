@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 
@@ -35,13 +36,9 @@ public class PolyTicketStorageMixin implements PolyChunkTrackerReference
 
     @Inject(
             method = "addTicket(JLnet/minecraft/server/level/Ticket;)Z",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Ljava/util/List;iterator()Ljava/util/Iterator;"
-            )
+            at = @At("RETURN")
     )
-    private void polylib$onAddTicket(long pos, Ticket ticket,
-                                     CallbackInfoReturnable<Boolean> cir)
+    private void polylib$onAddTicket(long pos, Ticket ticket, CallbackInfoReturnable<Boolean> cir)
     {
         if (polylib$tracker != null) {
             polylib$tracker.setTickets(pos, tickets.getOrDefault(pos, List.of()));
@@ -54,11 +51,27 @@ public class PolyTicketStorageMixin implements PolyChunkTrackerReference
             method = "removeTicket(JLnet/minecraft/server/level/Ticket;)Z",
             at = @At("RETURN")
     )
-    private void polylib$onRemoveTicket(long pos, Ticket ticket,
-                                         CallbackInfoReturnable<Boolean> cir)
+    private void polylib$onRemoveTicket(long pos, Ticket ticket, CallbackInfoReturnable<Boolean> cir)
     {
-        if (cir.getReturnValue() && polylib$tracker != null) {
+        // Even if it returns false, it may have removed the ticket without changing the level
+        if (polylib$tracker != null) {
             polylib$tracker.setTickets(pos, tickets.getOrDefault(pos, List.of()));
+        }
+    }
+
+    @Inject(
+            method = "removeTicketIf",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lit/unimi/dsi/fastutil/longs/Long2ObjectMap$Entry;getValue()Ljava/lang/Object;",
+                    ordinal = 3,
+                    remap = false
+            )
+    )
+    private void polylib$onRemoveTicketIf(java.util.function.BiPredicate<Ticket, Long> predicate, it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<List<Ticket>> map, CallbackInfo ci, @com.llamalad7.mixinextras.sugar.Local it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry<List<Ticket>> entry)
+    {
+        if (polylib$tracker != null) {
+            polylib$tracker.setTickets(entry.getLongKey(), entry.getValue());
         }
     }
 

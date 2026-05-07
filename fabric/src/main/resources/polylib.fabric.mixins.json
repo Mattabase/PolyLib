@@ -111,7 +111,7 @@
     "server.chunkmap.PolyChunkMapMixin",
     "server.chunkmap.PolyChunkMapAccessor",
     "server.chunkmap.PolyChunkHolderMixin",
-    "server.chunkmap.PolyDistanceManagerMixin",
+    "server.chunkmap.PolyServerChunkCacheMixin",
     "server.chunkmap.PolyDistanceManagerAccessor",
     "server.chunkmap.PolyTicketStorageMixin",
     "server.chunkmap.PolyPlayerListMixin",
