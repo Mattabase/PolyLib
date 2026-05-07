@@ -15,6 +15,7 @@ public class PolylibCommon
     {
         PolyLibNetwork.init();
         InternalEventListener.init();
+        net.creeperhost.polylib.chunkmap.server.PolyChunkMapServer.init();
         if (Services.PLATFORM.isClient()) {
             PolyLibClient.init();
         }

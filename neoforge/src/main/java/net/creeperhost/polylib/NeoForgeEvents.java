@@ -1,6 +1,7 @@
 package net.creeperhost.polylib;
 
 import net.creeperhost.polylib.accessibility.AccessibilityPrefsManager;
+import net.creeperhost.polylib.chunkmap.server.PolyChunkMapServer;
 import net.creeperhost.polylib.event.data.CancelContext;
 import net.creeperhost.polylib.event.events.server.PolyBlockEvents;
 import net.creeperhost.polylib.event.events.server.PolyEntityEvents;
@@ -164,6 +165,9 @@ public class NeoForgeEvents
             PlayerClientSettingsManager.onPlayerLogin(sp);
             PlayerServerDataManager.onPlayerLogin(sp);
             PolyPlayerEvents.LOGIN.invoker().onLogin(sp);
+            // Chunk-map: send Hello if permitted
+            PolyChunkMapServer server = PolyChunkMapServer.getInstance();
+            if (server != null) server.onPlayerJoin(sp, ((net.minecraft.server.level.ServerLevel) sp.level()).getServer());
         }
     }
 
@@ -310,6 +314,9 @@ public class NeoForgeEvents
         if (event.getLevel() instanceof ServerLevel sl)
         {
             PolyServerTickEvents.LEVEL_TICK_END.invoker().onLevelTickEnd(sl);
+            // Chunk-map: flush dirty chunks to watching clients
+            PolyChunkMapServer server = PolyChunkMapServer.getInstance();
+            if (server != null) server.onLevelTick(sl);
         }
     }
 
