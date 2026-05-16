@@ -14,6 +14,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import java.util.UUID;
 
+import net.creeperhost.polylib.client.modulargui.nodegraph.NodeTypeRegistry;
+import net.creeperhost.testmod.nodegraph.TestItemPassthroughNodeType;
+import net.creeperhost.testmod.nodegraph.TestSignalSourceNodeType;
+
 public class TestModClientCommon
 {
     private static boolean reduceMotion = false;
@@ -48,6 +52,10 @@ public class TestModClientCommon
                 )
             );
         }
+
+        // Register test node types for the node graph demo (PR21)
+        NodeTypeRegistry.register(TestSignalSourceNodeType.INSTANCE);
+        NodeTypeRegistry.register(TestItemPassthroughNodeType.INSTANCE);
 
         // Register a test chat channel
         Identifier testChannelId = Identifier.fromNamespaceAndPath("testmod", "test_channel");
