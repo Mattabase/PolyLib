@@ -13,6 +13,7 @@ pluginManagement {
                 includeGroupAndSubgroups('net.fabricmc')
             }
         }
+        maven { url "https://maven.architectury.dev/" }
     }
 }
 
@@ -25,3 +26,4 @@ rootProject.name = 'PolyLib MultiLoader-Template'
 include('common')
 include('fabric')
 include('neoforge')
+
