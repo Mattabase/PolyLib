@@ -46,13 +46,11 @@ import java.util.function.Consumer;
 public final class PolyChunkMapServer
 {
     private static final Logger LOGGER = LogManager.getLogger(Constants.MOD_NAME + "/ChunkMap");
-    private static final int PACKET_PARTITION = 20_000;
 
     private static @Nullable PolyChunkMapServer INSTANCE;
 
-    /** dimension → set of watching player UUIDs (thread-safe). */
-    private final Multimap<ResourceKey<Level>, UUID> watching =
-            Multimaps.synchronizedSetMultimap(HashMultimap.create());
+    /** Active player sessions */
+    private final Map<UUID, ChunkMapSession> sessions = new java.util.concurrent.ConcurrentHashMap<>();
 
     private PolyChunkMapServer() {}
 
@@ -60,6 +58,7 @@ public final class PolyChunkMapServer
 
     public static void init()
     {
+        net.creeperhost.polylib.PolyFeatures.enableChunkMap();
         INSTANCE = new PolyChunkMapServer();
     }
 
@@ -92,6 +91,10 @@ public final class PolyChunkMapServer
         return perms == PermissionSet.ALL_PERMISSIONS;
     }
 
+    private ChunkMapSession getOrCreateSession(ServerPlayer player) {
+        return sessions.computeIfAbsent(player.getUUID(), id -> new ChunkMapSession(player));
+    }
+
     // ── Lifecycle events (called from platform-specific event handlers) ────────
 
     /** Called when a player joins — sends Hello if permitted. */
@@ -99,34 +102,36 @@ public final class PolyChunkMapServer
     {
         // Defer one tick so permission plugins (e.g. LuckPerms) finish loading
         server.execute(() -> {
-            if (isPermitted(player))
-                player.connection.send(new ClientboundCustomPayloadPacket(PolyChunkMapHelloPayload.INSTANCE));
+            getOrCreateSession(player).onPlayerJoin();
         });
     }
 
     /** Called when a player is granted OP. */
     public void onOpPlayer(ServerPlayer player)
     {
-        player.connection.send(new ClientboundCustomPayloadPacket(PolyChunkMapHelloPayload.INSTANCE));
+        getOrCreateSession(player).checkPermissions();
     }
 
     /** Called when a player's OP is revoked. */
     public void onDeOpPlayer(ServerPlayer player)
     {
-        // Stop watching and revoke access
-        UUID uuid = player.getUUID();
-        synchronized (watching) {
-            for (ResourceKey<Level> dim : new ArrayList<>(watching.keySet())) {
-                watching.remove(dim, uuid);
-            }
+        ChunkMapSession session = sessions.get(player.getUUID());
+        if (session != null) {
+            session.checkPermissions();
         }
-        player.connection.send(new ClientboundCustomPayloadPacket(PolyChunkMapByePayload.INSTANCE));
+    }
+    
+    public void onPlayerLeave(ServerPlayer player) {
+        sessions.remove(player.getUUID());
     }
 
     /** Called when a level is unloaded. */
     public void onLevelUnload(ServerLevel level)
     {
-        watching.removeAll(level.dimension());
+        ResourceKey<Level> dim = level.dimension();
+        for (ChunkMapSession session : sessions.values()) {
+            session.onLevelUnload(dim);
+        }
     }
 
     /**
@@ -135,88 +140,29 @@ public final class PolyChunkMapServer
      */
     public void onLevelTick(ServerLevel level)
     {
-        ResourceKey<Level> dimension = level.dimension();
-        if (!watching.containsKey(dimension)) return;
-
-        List<ServerPlayer> players = new ArrayList<>();
-        List<Runnable> cleanup = new ArrayList<>();
-
-        synchronized (watching) {
-            for (UUID uuid : watching.get(dimension)) {
-                ServerPlayer player = level.getServer().getPlayerList().getPlayer(uuid);
-                if (player == null) {
-                    cleanup.add(() -> watching.remove(dimension, uuid));
-                } else {
-                    players.add(player);
-                }
-            }
-        }
-        if (players.isEmpty()) { cleanup.forEach(Runnable::run); return; }
+        sessions.values().removeIf(session -> level.getServer().getPlayerList().getPlayer(session.getPlayerId()) == null);
 
         PolyChunkTracker tracker = ((PolyChunkTrackerHolder) level).polylib$getChunkTracker();
         PolyChunkTracker.DirtyChunks dirty = tracker.getDirty();
+        if (dirty.updated().isEmpty() && dirty.removed().isEmpty()) return;
 
-        // Send updated chunks
-        partitionInto(dirty.updated(), partition -> {
-            PolyChunkMapDataPayload payload = new PolyChunkMapDataPayload(
-                    dimension, partition, level.getServer().getTickCount(), false);
-            ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(payload);
-            for (ServerPlayer player : players) player.connection.send(packet);
-        });
-
-        // Send unloaded chunk positions
-        if (!dirty.removed().isEmpty()) {
-            PolyChunkMapUnloadPayload payload = new PolyChunkMapUnloadPayload(
-                    dimension, dirty.removed().toLongArray());
-            ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(payload);
-            for (ServerPlayer player : players) player.connection.send(packet);
+        for (ChunkMapSession session : sessions.values()) {
+            session.sendTickUpdates(level, dirty);
         }
-
-        cleanup.forEach(Runnable::run);
     }
 
     // ── Payload handlers (called from network registration) ───────────────────
 
     public void handleStart(PolyChunkMapStartPayload payload, ServerPlayer player)
     {
-        if (!isPermitted(player)) {
-            LOGGER.warn("Player {} attempted chunk-map without permission", player.getScoreboardName());
-            return;
-        }
-        MinecraftServer server = ((ServerLevel) player.level()).getServer();
-        int tick = server.getTickCount();
-
-        for (ResourceKey<Level> dimension : payload.dimensions()) {
-            ServerLevel level = server.getLevel(dimension);
-            if (level == null) {
-                LOGGER.warn("Player {} requested unknown dimension {}", player.getScoreboardName(), dimension);
-                continue;
-            }
-            if (watching.put(dimension, player.getUUID())) {
-                // Send full initial snapshot
-                Collection<PolyChunkMapData> all =
-                        ((PolyChunkTrackerHolder) level).polylib$getChunkTracker().getAll();
-                partitionInto(all, partition -> {
-                    PolyChunkMapDataPayload p = new PolyChunkMapDataPayload(dimension, partition, tick, true);
-                    player.connection.send(new ClientboundCustomPayloadPacket(p));
-                });
-            }
-        }
+        getOrCreateSession(player).startWatching(payload.dimensions());
     }
 
     public void handleStop(PolyChunkMapStopPayload payload, ServerPlayer player)
     {
-        UUID uuid = player.getUUID();
-        if (payload.dimensions().isEmpty()) {
-            synchronized (watching) {
-                for (ResourceKey<Level> dim : new ArrayList<>(watching.keySet())) {
-                    watching.remove(dim, uuid);
-                }
-            }
-        } else {
-            for (ResourceKey<Level> dim : payload.dimensions()) {
-                watching.remove(dim, uuid);
-            }
+        ChunkMapSession session = sessions.get(player.getUUID());
+        if (session != null) {
+            session.stopWatching(payload.dimensions());
         }
     }
 
@@ -226,17 +172,6 @@ public final class PolyChunkMapServer
         // Refresh must run on each level's tick thread; schedule via the server
         for (ServerLevel level : server.getAllLevels()) {
             server.execute(() -> ((PolyChunkTrackerHolder) level).polylib$getChunkTracker().refresh());
-        }
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private <T> void partitionInto(Collection<T> data, Consumer<Collection<T>> consumer)
-    {
-        if (data.isEmpty()) return;
-        if (data.size() <= PACKET_PARTITION) { consumer.accept(data); return; }
-        for (Collection<T> partition : Iterables.partition(data, PACKET_PARTITION)) {
-            consumer.accept(partition);
         }
     }
 }

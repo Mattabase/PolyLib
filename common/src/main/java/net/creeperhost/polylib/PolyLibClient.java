@@ -25,6 +25,8 @@ public class PolyLibClient
 
         net.creeperhost.polylib.event.events.client.PolyClientConnectionEvents.CLIENT_PLAY_DISCONNECT
                 .register((handler, client) -> net.creeperhost.polylib.chunkmap.client.PolyChunkMapClient.reset());
+
+        // Removed default ChatScreen injection for FloatingChatWindow to allow custom UI integrations.
     }
 
 

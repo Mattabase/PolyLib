@@ -42,6 +42,7 @@ public abstract class PolyChunkMapMixin
     )
     private void polylib$onScheduleUnload(BooleanSupplier hasMoreTime, CallbackInfo ci, @com.llamalad7.mixinextras.sugar.Local(ordinal = 0, type = long.class) long pos)
     {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         PolyChunkTracker tracker = ((PolyChunkTrackerHolder) level).polylib$getChunkTracker();
         tracker.setUnloading(pos, true);
     }
@@ -58,6 +59,7 @@ public abstract class PolyChunkMapMixin
     )
     private void polylib$onUnloadHolder(ChunkHolder holder, CompletableFuture<?> future, long pos, CallbackInfo ci)
     {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         PolyChunkTracker tracker = ((PolyChunkTrackerHolder) level).polylib$getChunkTracker();
         tracker.unload(pos);
     }
@@ -82,6 +84,7 @@ public abstract class PolyChunkMapMixin
             StaticCache2D<GenerationChunkHolder> cache,
             CallbackInfoReturnable<CompletableFuture<ChunkAccess>> cir)
     {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         PolyChunkTracker tracker = ((PolyChunkTrackerHolder) level).polylib$getChunkTracker();
         ChunkStatus target = step.targetStatus();
         tracker.queueStage(chunk.getPos().pack(), target);

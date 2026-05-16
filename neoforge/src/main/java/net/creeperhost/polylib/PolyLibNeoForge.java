@@ -8,6 +8,7 @@ import net.minecraft.core.registries.Registries;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforge.data.loading.DatagenModLoader;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 @Mod(Constants.MOD_ID)
@@ -17,6 +18,10 @@ public class PolyLibNeoForge
 
     public PolyLibNeoForge(IEventBus eventBus)
     {
+        if (DatagenModLoader.isRunningDataGen()) {
+            COMPONENTS.register(eventBus);
+            return;
+        }
         PolylibCommon.registerConfig();
         PolylibCommon.init();
 

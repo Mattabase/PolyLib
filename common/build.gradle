@@ -54,3 +54,4 @@ sourceSets.configureEach {
         }
     }
 }
+task printClasspath { doLast { configurations.compileClasspath.each { println it } } }

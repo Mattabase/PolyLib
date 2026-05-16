@@ -1,12 +1,18 @@
 package net.creeperhost.testmod;
 
 import net.creeperhost.polylib.accessibility.AccessibilityOptionsRegistry;
+import net.creeperhost.polylib.chat.ChatChannel;
+import net.creeperhost.polylib.chat.ChatMember;
+import net.creeperhost.polylib.chat.ChatRouter;
+import net.creeperhost.polylib.chat.RichChatMessage;
 import net.creeperhost.polylib.client.config.ConfigPanelRegistry;
 import net.creeperhost.polylib.client.modulargui.ModularGuiInjector;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import java.util.UUID;
 
 public class TestModClientCommon
 {
@@ -42,5 +48,15 @@ public class TestModClientCommon
                 )
             );
         }
+
+        // Register a test chat channel
+        Identifier testChannelId = Identifier.fromNamespaceAndPath("testmod", "test_channel");
+        ChatChannel testChannel = new ChatChannel(testChannelId, Component.literal("Test Channel"), true);
+        ChatRouter.getInstance().registerChannel(testChannel);
+        
+        // Add some dummy members and messages
+        testChannel.addMember(new ChatMember(UUID.randomUUID(), Component.literal("Test User"), null, true));
+        testChannel.addMessage(RichChatMessage.create(Component.literal("Welcome to the test channel!"), Component.literal("System")));
+        testChannel.addMessage(RichChatMessage.create(Component.literal("This is a draggable modular window."), Component.literal("System")));
     }
 }

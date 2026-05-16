@@ -40,6 +40,7 @@ public class PolyTicketStorageMixin implements PolyChunkTrackerReference
     private void polylib$onAddTicket(long pos, Ticket ticket,
                                      CallbackInfoReturnable<Boolean> cir)
     {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         if (polylib$tracker != null) {
             polylib$tracker.setTickets(pos, tickets.getOrDefault(pos, List.of()));
         }
@@ -54,6 +55,7 @@ public class PolyTicketStorageMixin implements PolyChunkTrackerReference
     private void polylib$onRemoveTicket(long pos, Ticket ticket,
                                          CallbackInfoReturnable<Boolean> cir)
     {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         if (polylib$tracker != null) {
             polylib$tracker.setTickets(pos, tickets.getOrDefault(pos, List.of()));
         }
@@ -68,8 +70,9 @@ public class PolyTicketStorageMixin implements PolyChunkTrackerReference
                     remap = false
             )
     )
-    private void polylib$onRemoveTicketIf(java.util.function.BiPredicate<Ticket, Long> predicate, it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<List<Ticket>> map, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci, @com.llamalad7.mixinextras.sugar.Local it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry<List<Ticket>> entry)
+    private void polylib$onRemoveTicketIf(TicketStorage.TicketPredicate predicate, it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<List<Ticket>> map, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci, @com.llamalad7.mixinextras.sugar.Local it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry<List<Ticket>> entry)
     {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         if (polylib$tracker != null) {
             polylib$tracker.setTickets(entry.getLongKey(), entry.getValue());
         }

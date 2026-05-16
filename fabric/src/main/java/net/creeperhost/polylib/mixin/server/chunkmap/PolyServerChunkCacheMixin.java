@@ -27,6 +27,7 @@ public class PolyServerChunkCacheMixin
     @Inject(method = "<init>", at = @At("TAIL"))
     private void polylib$onInit(CallbackInfo ci)
     {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         PolyChunkTracker tracker = ((PolyChunkTrackerHolder) this.level).polylib$getChunkTracker();
         TicketStorage ticketStorage = ((PolyDistanceManagerAccessor) this.chunkMap.getDistanceManager()).polylib$getTicketStorage();
         ((PolyChunkTrackerReference) ticketStorage).polylib$setTracker(tracker);

@@ -26,6 +26,7 @@ public abstract class PolyDistanceManagerMixin implements PolyChunkTrackerHolder
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void polylib$onInit(Executor executor, Executor executor2, CallbackInfo ci) {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         PolyChunkTracker tracker = ((PolyChunkTrackerHolder) ((PolyChunkMapAccessor) this.this$0).polylib$getLevel()).polylib$getChunkTracker();
         ((PolyChunkTrackerReference) this.simulationChunkTracker).polylib$setTracker(tracker);
         ((PolyChunkTrackerReference) this.loadingChunkTracker).polylib$setTracker(tracker);

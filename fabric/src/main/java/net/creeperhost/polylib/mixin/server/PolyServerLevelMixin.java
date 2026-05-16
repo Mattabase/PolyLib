@@ -25,6 +25,7 @@ public class PolyServerLevelMixin implements PolyChunkTrackerHolder
     @Inject(method = "tick", at = @At("HEAD"))
     private void polylib$onTick(BooleanSupplier hasTimeLeft, CallbackInfo ci)
     {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         polylib$chunkTracker.tick();
     }
 

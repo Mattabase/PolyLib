@@ -34,6 +34,7 @@ public abstract class PolyChunkHolderMixin extends GenerationChunkHolder
     @Inject(method = "updateFutures", at = @At("RETURN"))
     private void polylib$onUpdateFutures(ChunkMap chunkMap, Executor executor, CallbackInfo ci)
     {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         ServerLevel level = ((PolyChunkMapAccessor) chunkMap).polylib$getLevel();
         PolyChunkTracker tracker = ((PolyChunkTrackerHolder) level).polylib$getChunkTracker();
         DistanceManager dm = chunkMap.getDistanceManager();

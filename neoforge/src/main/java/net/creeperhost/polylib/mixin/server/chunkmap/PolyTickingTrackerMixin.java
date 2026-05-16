@@ -15,6 +15,7 @@ public class PolyTickingTrackerMixin implements PolyChunkTrackerReference {
 
     @Inject(method = "setLevel(JI)V", at = @At("TAIL"))
     private void polylib$onSetLevel(long pos, int level, CallbackInfo ci) {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         if (this.polylib$tracker != null) {
             String className = this.getClass().getName();
             if (className.endsWith("SimulationChunkTracker") || className.endsWith("TickingTracker")) {

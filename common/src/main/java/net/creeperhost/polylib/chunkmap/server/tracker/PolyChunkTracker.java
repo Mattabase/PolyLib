@@ -40,8 +40,8 @@ public class PolyChunkTracker
     /** Chunks modified since the last {@link #getDirty()} call. */
     private final LongSet dirty = new LongOpenHashSet();
 
-    /** Pending stage updates from off-thread chunk generation. */
-    private final Map<Long, ChunkStatus> pendingStages = new Object2ObjectOpenHashMap<>();
+    /** Concurrency seam for off-thread chunk generation updates. */
+    private final ChunkStateObserver observer = new ChunkStateObserver();
 
     private final ServerLevel level;
 
@@ -89,15 +89,18 @@ public class PolyChunkTracker
     /** Called each tick to flush pending off-thread stage updates. */
     public void tick()
     {
-        synchronized (pendingStages) {
-            for (Map.Entry<Long, ChunkStatus> e : pendingStages.entrySet()) {
-                MutableState s = chunks.get(e.getKey());
-                if (s != null && s.stage != e.getValue()) {
-                    s.stage = e.getValue();
-                    markDirty(e.getKey());
-                }
-            }
-            pendingStages.clear();
+        checkThread();
+        observer.drainTo(this);
+    }
+
+    /** Called by ChunkStateObserver to apply stage changes on the main thread. */
+    public void applyStageUpdate(long packed, ChunkStatus stage)
+    {
+        checkThread();
+        MutableState s = chunks.get(packed);
+        if (s != null && s.stage != stage) {
+            s.stage = stage;
+            markDirty(packed);
         }
     }
 
@@ -110,7 +113,7 @@ public class PolyChunkTracker
         checkThread();
         chunks.clear();
         dirty.clear();
-        synchronized (pendingStages) { pendingStages.clear(); }
+        // Any pending items in the observer will just drop during drain since chunks is empty.
     }
 
     /** Add or update a chunk. */
@@ -158,13 +161,9 @@ public class PolyChunkTracker
         if (s != null) { s.statusLevel = level; markDirty(packed); }
     }
 
-    /**
-     * Queue a stage update from an off-thread context.
-     * Applied to the main state during the next {@link #tick()}.
-     */
     public void queueStage(long packed, ChunkStatus stage)
     {
-        synchronized (pendingStages) { pendingStages.put(packed, stage); }
+        observer.queueStage(packed, stage);
     }
 
     // ── Internals ─────────────────────────────────────────────────────────────

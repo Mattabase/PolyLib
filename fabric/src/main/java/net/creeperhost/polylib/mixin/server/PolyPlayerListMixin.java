@@ -26,6 +26,7 @@ public class PolyPlayerListMixin
     private void polylib$onOpPlayer(CallbackInfo ci,
                                      @Local(name = "player") ServerPlayer player)
     {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         PolyChunkMapServer server = PolyChunkMapServer.getInstance();
         if (server != null) server.onOpPlayer(player);
     }
@@ -40,6 +41,7 @@ public class PolyPlayerListMixin
     private void polylib$onDeOpPlayer(CallbackInfo ci,
                                        @Local(name = "player") ServerPlayer player)
     {
+        if (!net.creeperhost.polylib.PolyFeatures.isChunkMapEnabled()) return;
         PolyChunkMapServer server = PolyChunkMapServer.getInstance();
         if (server != null) server.onDeOpPlayer(player);
     }
