@@ -16,6 +16,9 @@ import net.creeperhost.polylib.event.events.client.PolyRenderEvents;
 import net.creeperhost.polylib.event.events.client.PolyRenderStateEvents;
 import net.creeperhost.polylib.event.events.client.PolyTooltipEvents;
 import net.creeperhost.polylib.event.events.server.PolyRegistryEvents;
+import net.creeperhost.polylib.client.screen.chunkmap.PolyChunkMapScreen;
+import net.minecraft.client.Minecraft;
+import org.lwjgl.glfw.GLFW;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -103,6 +106,20 @@ public class TestClientEvents
         {
             if (action == 1) // 1 = press
                 LOGGER.info("[TestMod] INPUT_KEY: key={} scan={} mods={}", key, scanCode, modifiers);
+        });
+
+        // KP_1 → Chunk Map Screen
+        PolyInputEvents.INPUT_KEY.register((key, scanCode, action, modifiers) ->
+        {
+            if (action != 1) return; // press only
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.screen != null) return;
+
+            if (key == GLFW.GLFW_KEY_KP_1)
+            {
+                LOGGER.info("[TestMod] Opening PolyChunkMapScreen via KP_1");
+                mc.setScreen(new PolyChunkMapScreen());
+            }
         });
 
         // Mouse button: only log press (action==1)

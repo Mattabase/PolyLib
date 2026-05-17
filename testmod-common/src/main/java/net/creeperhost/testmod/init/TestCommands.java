@@ -90,6 +90,7 @@ public final class TestCommands
                 .then(Commands.literal("manual").executes(TestCommands::testManual))
                 .then(Commands.literal("multiplace").executes(TestCommands::testMultiPlace))
                 .then(Commands.literal("brewing").executes(TestCommands::testBrewing))
+                .then(Commands.literal("chunkmap").executes(TestCommands::testChunkMap))
                 .then(Commands.literal("help").executes(TestCommands::testHelp))
         );
     }
@@ -956,7 +957,23 @@ public final class TestCommands
         src.sendSuccess(() -> Component.literal("§b[polytest] Available subcommands:"), false);
         src.sendSuccess(() -> Component.literal("  §fTier 1: §7living, block, effects, entity, explosion, conversion, tick, spawn, sleep, bow, xp"), false);
         src.sendSuccess(() -> Component.literal("  §fTier 3+: §7damage, fall, attack, equip, projectile, lightning, teleport, breed, split, piston, noteblock, fluid, portal, gamemode, setspawn, item, useitem, multiplace, brewing"), false);
+        src.sendSuccess(() -> Component.literal("  §fPR extras: §7chunkmap"), false);
         src.sendSuccess(() -> Component.literal("  §fInfo: §7passive (auto-firing events), manual (gameplay-required events), help"), false);
+        return 1;
+    }
+
+    // =========================================================================
+    // PR17 — PolyChunkMapScreen
+    // =========================================================================
+
+    // ----- /polytest chunkmap -----
+    // PolyChunkMapScreen is a client-only GUI; this command prints the keybind hint
+
+    private static int testChunkMap(CommandContext<CommandSourceStack> ctx)
+    {
+        CommandSourceStack src = ctx.getSource();
+        src.sendSuccess(() -> Component.literal("[polytest] chunkmap: Press KP_1 (numpad 1) to open PolyChunkMapScreen on the client"), false);
+        src.sendSuccess(() -> Component.literal("The screen shows loaded/tracked chunks around the player in real time"), false);
         return 1;
     }
 }
