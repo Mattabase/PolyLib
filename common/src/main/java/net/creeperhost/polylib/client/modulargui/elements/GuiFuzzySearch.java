@@ -18,6 +18,7 @@ public class GuiFuzzySearch<T> extends GuiElement<GuiFuzzySearch<T>> {
     private final List<T> allItems;
     private final Function<T, String> stringExtractor;
     private final Consumer<T> onSelected;
+    private Function<T, List<Component>> tooltipExtractor = null;
 
     public GuiFuzzySearch(GuiParent<?> parent, List<T> items, Function<T, String> stringExtractor, Consumer<T> onSelected) {
         super(parent);
@@ -42,8 +43,12 @@ public class GuiFuzzySearch<T> extends GuiElement<GuiFuzzySearch<T>> {
         resultList = new GuiList<T>(this)
                 .setDisplayBuilder((list, item) -> {
                     String name = stringExtractor.apply(item);
-                    return GuiButton.vanillaAnimated(list, () -> Component.literal(name), () -> onSelected.accept(item))
+                    GuiButton btn = GuiButton.vanillaAnimated(list, () -> Component.literal(name), () -> onSelected.accept(item))
                             .constrain(GeoParam.HEIGHT, literal(16));
+                    if (tooltipExtractor != null) {
+                        btn.setTooltip(() -> tooltipExtractor.apply(item));
+                    }
+                    return btn;
                 })
                 .setFilter(this::matchesQuery)
                 .constrain(GeoParam.TOP, relative(searchField.get(GeoParam.BOTTOM), 4))
@@ -85,5 +90,10 @@ public class GuiFuzzySearch<T> extends GuiElement<GuiFuzzySearch<T>> {
         if (!searchField.isFocused() && this.isEnabled()) {
             searchField.setFocus(true);
         }
+    }
+
+    public GuiFuzzySearch<T> setTooltipExtractor(Function<T, List<Component>> tooltipExtractor) {
+        this.tooltipExtractor = tooltipExtractor;
+        return this;
     }
 }
