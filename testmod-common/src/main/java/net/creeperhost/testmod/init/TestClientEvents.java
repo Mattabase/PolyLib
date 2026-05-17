@@ -20,6 +20,7 @@ import net.creeperhost.polylib.event.events.client.PolyRenderEvents;
 import net.creeperhost.polylib.event.events.client.PolyRenderStateEvents;
 import net.creeperhost.polylib.event.events.client.PolyTooltipEvents;
 import net.creeperhost.polylib.event.events.server.PolyRegistryEvents;
+import net.creeperhost.testmod.screens.ScreenNodeGraphDemo;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
@@ -110,6 +111,20 @@ public class TestClientEvents
         {
             if (action == 1) // 1 = press
                 LOGGER.info("[TestMod] INPUT_KEY: key={} scan={} mods={}", key, scanCode, modifiers);
+        });
+
+        // KP_4 → Node Graph Demo
+        PolyInputEvents.INPUT_KEY.register((key, scanCode, action, modifiers) ->
+        {
+            if (action != 1) return; // press only
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.screen != null) return;
+
+            if (key == GLFW.GLFW_KEY_KP_4)
+            {
+                LOGGER.info("[TestMod] Opening ScreenNodeGraphDemo via KP_4");
+                mc.setScreen(new ScreenNodeGraphDemo());
+            }
         });
 
         // Mouse button: only log press (action==1)

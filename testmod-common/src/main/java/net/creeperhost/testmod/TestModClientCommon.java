@@ -14,10 +14,13 @@ import net.creeperhost.polylib.client.modulargui.ModularGuiInjector;
 import net.creeperhost.polylib.client.modulargui.ModularGuiScreen;
 import net.creeperhost.polylib.client.modulargui.lib.geometry.Constraint;
 import net.creeperhost.polylib.client.modulargui.lib.geometry.GeoParam;
+import net.creeperhost.polylib.client.modulargui.nodegraph.NodeTypeRegistry;
 import net.creeperhost.polylib.event.events.client.PolyInputEvents;
 import net.creeperhost.testmod.init.TestClientEvents;
 import net.creeperhost.testmod.init.TestDebugEntries;
 import net.creeperhost.testmod.init.TestScreens;
+import net.creeperhost.testmod.nodegraph.TestItemPassthroughNodeType;
+import net.creeperhost.testmod.nodegraph.TestSignalSourceNodeType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
@@ -41,6 +44,7 @@ public class TestModClientCommon
         TestDebugEntries.init();
         ModularGuiInjector.registerInjection(e -> e instanceof TitleScreen, e -> new MainMenuGuiInjection());
 
+<<<<<<< HEAD
         // -----------------------------------------------------------------------
         // 1. Register chat channels
         // -----------------------------------------------------------------------
@@ -222,5 +226,9 @@ public class TestModClientCommon
         LOGGER.info("  RIGHT tab : Trade (side-right bar)");
         LOGGER.info("  KP_5 = open floating windows | KP_6 = trigger mention pulse");
         LOGGER.info("  KP_7 = send 3 notifications  | KP_8 = flood messages | KP_9 = badge test");
+
+        // Register test node types for the node graph demo
+        NodeTypeRegistry.register(TestSignalSourceNodeType.INSTANCE);
+        NodeTypeRegistry.register(TestItemPassthroughNodeType.INSTANCE);
     }
 }
