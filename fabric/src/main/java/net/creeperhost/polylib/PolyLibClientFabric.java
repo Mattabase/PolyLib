@@ -16,6 +16,10 @@ import net.creeperhost.polylib.event.events.client.PolyRenderEvents;
 import net.creeperhost.polylib.event.events.client.PolyRenderStateEvents;
 import net.creeperhost.polylib.event.events.client.PolyScreenEvents;
 import net.creeperhost.polylib.network.PolyLibNetwork;
+import net.creeperhost.polylib.chunkmap.client.PolyChunkMapClient;
+import net.creeperhost.polylib.chunkmap.common.network.*;
+import net.creeperhost.polylib.client.screen.chunkmap.PolyChunkMapKeys;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientBlockEntityEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
@@ -43,6 +47,16 @@ public class PolyLibClientFabric
     {
         FabricEventsClient.init();
         PolyLibNetwork.initClient();
+
+        // ── ChunkMap S2C client handlers ────────────────────────────────────────
+        ClientPlayNetworking.registerGlobalReceiver(PolyChunkMapHelloPayload.TYPE,
+                (payload, ctx) -> ctx.client().execute(PolyChunkMapClient::onHello));
+        ClientPlayNetworking.registerGlobalReceiver(PolyChunkMapByePayload.TYPE,
+                (payload, ctx) -> ctx.client().execute(PolyChunkMapClient::onBye));
+        ClientPlayNetworking.registerGlobalReceiver(PolyChunkMapDataPayload.TYPE,
+                (payload, ctx) -> ctx.client().execute(() -> PolyChunkMapClient.onData(payload)));
+        ClientPlayNetworking.registerGlobalReceiver(PolyChunkMapUnloadPayload.TYPE,
+                (payload, ctx) -> ctx.client().execute(() -> PolyChunkMapClient.onUnload(payload)));
 
         // ── T19: Screen Lifecycle, Tick, Input (Fabric) ────────────────────────
         ScreenEvents.BEFORE_INIT.register((mc, screen, w, h) -> {
