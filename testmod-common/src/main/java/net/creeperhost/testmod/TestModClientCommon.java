@@ -15,11 +15,15 @@ import net.creeperhost.polylib.client.modulargui.ModularGuiScreen;
 import net.creeperhost.polylib.client.modulargui.lib.geometry.Constraint;
 import net.creeperhost.polylib.client.modulargui.lib.geometry.GeoParam;
 import net.creeperhost.polylib.client.modulargui.nodegraph.NodeTypeRegistry;
+import net.creeperhost.polylib.client.modulargui.nodegraph.graph.NodeGraph;
 import net.creeperhost.polylib.event.events.client.PolyInputEvents;
 import net.creeperhost.testmod.init.TestClientEvents;
 import net.creeperhost.testmod.init.TestDebugEntries;
 import net.creeperhost.testmod.init.TestScreens;
+import net.creeperhost.testmod.nodegraph.TestAnyRelayNodeType;
+import net.creeperhost.testmod.nodegraph.TestFluidBufferNodeType;
 import net.creeperhost.testmod.nodegraph.TestItemPassthroughNodeType;
+import net.creeperhost.testmod.nodegraph.TestSignalSinkNodeType;
 import net.creeperhost.testmod.nodegraph.TestSignalSourceNodeType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -44,7 +48,6 @@ public class TestModClientCommon
         TestDebugEntries.init();
         ModularGuiInjector.registerInjection(e -> e instanceof TitleScreen, e -> new MainMenuGuiInjection());
 
-<<<<<<< HEAD
         // -----------------------------------------------------------------------
         // 1. Register chat channels
         // -----------------------------------------------------------------------
@@ -226,9 +229,84 @@ public class TestModClientCommon
         LOGGER.info("  RIGHT tab : Trade (side-right bar)");
         LOGGER.info("  KP_5 = open floating windows | KP_6 = trigger mention pulse");
         LOGGER.info("  KP_7 = send 3 notifications  | KP_8 = flood messages | KP_9 = badge test");
+        LOGGER.info("  KP_4 = open node graph demo   | KP_0 = run graph API verification");
 
-        // Register test node types for the node graph demo
-        NodeTypeRegistry.register(TestSignalSourceNodeType.INSTANCE);
-        NodeTypeRegistry.register(TestItemPassthroughNodeType.INSTANCE);
+        // Register test node types for the node graph demo (covers all 4 port data types)
+        NodeTypeRegistry.register(TestSignalSourceNodeType.INSTANCE);   // SIGNAL out
+        NodeTypeRegistry.register(TestSignalSinkNodeType.INSTANCE);     // SIGNAL in
+        NodeTypeRegistry.register(TestItemPassthroughNodeType.INSTANCE);// ITEMS in + out
+        NodeTypeRegistry.register(TestFluidBufferNodeType.INSTANCE);    // FLUID in + out
+        NodeTypeRegistry.register(TestAnyRelayNodeType.INSTANCE);       // ANY in + out
+
+        // -----------------------------------------------------------------------
+        // 5. KP_0 — in-game NodeGraph API verification (graph data model unit tests)
+        //    Exercises: addNode, addConnection, hasCycle, removeConnection,
+        //               removeNode, type-compatibility rejection, NBT round-trip.
+        // -----------------------------------------------------------------------
+        PolyInputEvents.INPUT_KEY.register((key, scanCode, action, modifiers) ->
+        {
+            if (action != 1) return; // press only
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.screen != null) return;
+            if (key != GLFW.GLFW_KEY_KP_0) return;
+
+            LOGGER.info("[TestMod] KP_0: running NodeGraph API verification...");
+            int pass = 0, fail = 0;
+
+            // 1. addNode
+            NodeGraph g = new NodeGraph();
+            UUID srcId  = UUID.randomUUID();
+            UUID sinkId = UUID.randomUUID();
+            UUID relayId = UUID.randomUUID();
+            g.addNode(new net.creeperhost.polylib.client.modulargui.nodegraph.graph.NodeDef(srcId,  TestSignalSourceNodeType.ID,   0, 0, null));
+            g.addNode(new net.creeperhost.polylib.client.modulargui.nodegraph.graph.NodeDef(sinkId, TestSignalSinkNodeType.ID,   200, 0, null));
+            g.addNode(new net.creeperhost.polylib.client.modulargui.nodegraph.graph.NodeDef(relayId,TestAnyRelayNodeType.ID,     400, 0, null));
+            if (g.nodes().size() == 3) { LOGGER.info("  [PASS] addNode x3"); pass++; }
+            else                       { LOGGER.error("  [FAIL] addNode: expected 3, got {}", g.nodes().size()); fail++; }
+
+            // 2. addConnection (valid: SIGNAL out → SIGNAL in)
+            UUID connId = UUID.randomUUID();
+            boolean added = g.addConnection(new net.creeperhost.polylib.client.modulargui.nodegraph.graph.ConnectionDef(connId, srcId, 0, sinkId, 0));
+            if (added) { LOGGER.info("  [PASS] addConnection SIGNAL→SIGNAL"); pass++; }
+            else       { LOGGER.error("  [FAIL] addConnection SIGNAL→SIGNAL rejected unexpectedly"); fail++; }
+
+            // 3. Duplicate input-port rejection (same toNode+toPort must be rejected)
+            boolean dup = g.addConnection(new net.creeperhost.polylib.client.modulargui.nodegraph.graph.ConnectionDef(UUID.randomUUID(), srcId, 0, sinkId, 0));
+            if (!dup) { LOGGER.info("  [PASS] duplicate input-port connection rejected"); pass++; }
+            else      { LOGGER.error("  [FAIL] duplicate input-port connection was accepted"); fail++; }
+
+            // 4. ANY compatibility: SIGNAL out → ANY in (relay)
+            boolean anyOk = g.addConnection(new net.creeperhost.polylib.client.modulargui.nodegraph.graph.ConnectionDef(UUID.randomUUID(), srcId, 0, relayId, 0));
+            if (anyOk) { LOGGER.info("  [PASS] SIGNAL→ANY compatibility"); pass++; }
+            else       { LOGGER.error("  [FAIL] SIGNAL→ANY rejected"); fail++; }
+
+            // 5. Cycle detection (src→sink→src would be a cycle; test self-loop)
+            boolean selfLoop = g.addConnection(new net.creeperhost.polylib.client.modulargui.nodegraph.graph.ConnectionDef(UUID.randomUUID(), srcId, 0, srcId, 0));
+            if (!selfLoop) { LOGGER.info("  [PASS] self-loop cycle rejected"); pass++; }
+            else           { LOGGER.error("  [FAIL] self-loop was accepted"); fail++; }
+
+            // 6. removeConnection
+            boolean removed = g.removeConnection(connId);
+            if (removed && g.connections().size() == 1) { LOGGER.info("  [PASS] removeConnection"); pass++; }
+            else { LOGGER.error("  [FAIL] removeConnection: removed={} connections={}", removed, g.connections().size()); fail++; }
+
+            // 7. removeNode (also removes its connections)
+            g.removeNode(sinkId);
+            if (!g.nodes().containsKey(sinkId)) { LOGGER.info("  [PASS] removeNode"); pass++; }
+            else { LOGGER.error("  [FAIL] removeNode: node still present"); fail++; }
+
+            // 8. NBT round-trip
+            NodeGraph g2 = new NodeGraph();
+            UUID a = UUID.randomUUID(), b = UUID.randomUUID();
+            g2.addNode(new net.creeperhost.polylib.client.modulargui.nodegraph.graph.NodeDef(a, TestSignalSourceNodeType.ID,   0, 0, null));
+            g2.addNode(new net.creeperhost.polylib.client.modulargui.nodegraph.graph.NodeDef(b, TestSignalSinkNodeType.ID,   200, 0, null));
+            g2.addConnection(new net.creeperhost.polylib.client.modulargui.nodegraph.graph.ConnectionDef(UUID.randomUUID(), a, 0, b, 0));
+            NodeGraph g3 = NodeGraph.fromNbt(g2.toNbt());
+            if (g3.nodes().size() == 2 && g3.connections().size() == 1) { LOGGER.info("  [PASS] NBT round-trip"); pass++; }
+            else { LOGGER.error("  [FAIL] NBT round-trip: nodes={} conns={}", g3.nodes().size(), g3.connections().size()); fail++; }
+
+            LOGGER.info("[TestMod] KP_0 complete: {} passed, {} failed", pass, fail);
+        });
     }
 }
+

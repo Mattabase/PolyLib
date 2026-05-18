@@ -59,6 +59,14 @@ public record PortDescriptor(int index, String label, PortDirection direction, P
         return new PortDescriptor(index, label, PortDirection.OUT, PortDataType.SIGNAL);
     }
 
+    public static PortDescriptor fluidIn(int index, String label) {
+        return new PortDescriptor(index, label, PortDirection.IN, PortDataType.FLUID);
+    }
+
+    public static PortDescriptor fluidOut(int index, String label) {
+        return new PortDescriptor(index, label, PortDirection.OUT, PortDataType.FLUID);
+    }
+
     public static PortDescriptor anyIn(int index, String label) {
         return new PortDescriptor(index, label, PortDirection.IN, PortDataType.ANY);
     }

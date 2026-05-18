@@ -6,7 +6,9 @@ import net.creeperhost.polylib.client.modulargui.lib.Constraints;
 import net.creeperhost.polylib.client.modulargui.lib.GuiProvider;
 import net.creeperhost.polylib.client.modulargui.lib.geometry.GeoParam;
 import net.creeperhost.polylib.client.modulargui.sprite.Material;
+import net.creeperhost.testmod.screens.ScreenNodeGraphDemo;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.PlainTextButton;
 import net.minecraft.client.gui.components.Renderable;
@@ -26,8 +28,8 @@ public class MainMenuGuiInjection implements GuiProvider
         gui.initFullscreenGui();
         GuiElement<?> root = gui.getRoot();
 
-        GuiButton testButton = GuiButton.vanilla(root, Component.literal("Test Button"))
-                .onClick(() -> {});
+        GuiButton testButton = GuiButton.vanilla(root, Component.literal("Node Graph Demo"))
+                .onClick(() -> Minecraft.getInstance().setScreen(new ScreenNodeGraphDemo()));
         Constraints.size(testButton, 100, 20);
         Constraints.placeInside(testButton, root, Constraints.LayoutPos.TOP_LEFT, 10, 10);
 
